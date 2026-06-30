@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sales Tracker — WhatsApp</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f0f0f;
+      color: #e5e5e5;
+      min-height: 100vh;
+    }
+    header {
+      background: #1a1a1a;
+      border-bottom: 1px solid #2a2a2a;
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    header h1 { font-size: 1.1rem; font-weight: 600; }
+    header span { font-size: 1.4rem; }
+
+    .stats {
+      display: flex;
+      gap: 1rem;
+      padding: 1.25rem 1.5rem;
+    }
+    .stat-card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 10px;
+      padding: 1rem 1.5rem;
+      flex: 1;
+      min-width: 120px;
+    }
+    .stat-card .label { font-size: 0.75rem; color: #888; margin-bottom: 0.3rem; }
+    .stat-card .value { font-size: 1.6rem; font-weight: 700; }
+    .stat-card.green .value { color: #4ade80; }
+    .stat-card.blue .value { color: #60a5fa; }
+    .stat-card.yellow .value { color: #fbbf24; }
+
+    .filters {
+      padding: 0 1.5rem 1rem;
+      display: flex;
+      gap: 0.5rem;
+    }
+    .filter-btn {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      color: #aaa;
+      padding: 0.4rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.15s;
+    }
+    .filter-btn.active {
+      background: #25d366;
+      border-color: #25d366;
+      color: #000;
+      font-weight: 600;
+    }
+
+    .table-wrap { padding: 0 1.5rem 2rem; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    thead th {
+      text-align: left;
+      padding: 0.6rem 0.75rem;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #666;
+      border-bottom: 1px solid #2a2a2a;
+    }
+    tbody tr { border-bottom: 1px solid #1e1e1e; transition: background 0.1s; }
+    tbody tr:hover { background: #1a1a1a; }
+    tbody td { padding: 0.75rem 0.75rem; vertical-align: middle; }
+
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge.lead { background: #1e3a5f; color: #60a5fa; }
+    .badge.comprou { background: #14532d; color: #4ade80; }
+
+    .clid-chip {
+      font-size: 0.72rem;
+      font-family: monospace;
+      background: #1e1e1e;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      color: #aaa;
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      display: inline-block;
+    }
+    .no-clid { color: #555; font-size: 0.8rem; }
+
+    .btn-venda {
+      background: #25d366;
+      color: #000;
+      border: none;
+      padding: 0.35rem 0.9rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.82rem;
+      transition: opacity 0.15s;
+    }
+    .btn-venda:hover { opacity: 0.85; }
+    .btn-venda:disabled { opacity: 0.4; cursor: not-allowed; }
+    .sent-label { color: #4ade80; font-size: 0.78rem; }
+
+    /* Modal */
+    .modal-backdrop {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 14px;
+      padding: 1.75rem;
+      width: 360px;
+      max-width: 95vw;
+    }
+    .modal h2 { font-size: 1rem; margin-bottom: 1.25rem; }
+    .modal label { font-size: 0.82rem; color: #999; display: block; margin-bottom: 0.3rem; }
+    .modal input {
+      width: 100%;
+      background: #111;
+      border: 1px solid #333;
+      color: #e5e5e5;
+      padding: 0.6rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      margin-bottom: 1rem;
+      outline: none;
+    }
+    .modal input:focus { border-color: #25d366; }
+    .modal-actions { display: flex; gap: 0.75rem; justify-content: flex-end; }
+    .btn-cancel {
+      background: transparent;
+      border: 1px solid #333;
+      color: #aaa;
+      padding: 0.5rem 1.1rem;
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .btn-confirm {
+      background: #25d366;
+      border: none;
+      color: #000;
+      padding: 0.5rem 1.3rem;
+      border-radius: 7px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+    .btn-confirm:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .empty { text-align: center; padding: 3rem; color: #555; }
+
+    @media (max-width: 600px) {
+      .stats { flex-wrap: wrap; }
+      .stat-card { min-width: calc(50% - 0.5rem); }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <span>📊</span>
+  <h1>Sales Tracker — WhatsApp</h1>
+</header>
+
+<div class="stats">
+  <div class="stat-card blue">
+    <div class="label">Total Leads</div>
+    <div class="value" id="total-leads">—</div>
+  </div>
+  <div class="stat-card green">
+    <div class="label">Vendas</div>
+    <div class="value" id="total-vendas">—</div>
+  </div>
+  <div class="stat-card yellow">
+    <div class="label">Receita</div>
+    <div class="value" id="total-receita">—</div>
+  </div>
+  <div class="stat-card green">
+    <div class="label">Conversão</div>
+    <div class="value" id="taxa-conversao">—</div>
+  </div>
+</div>
+
+<div class="filters">
+  <button class="filter-btn active" data-filter="todos">Todos</button>
+  <button class="filter-btn" data-filter="lead">Leads</button>
+  <button class="filter-btn" data-filter="comprou">Compras</button>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Telefone</th>
+        <th>Nome</th>
+        <th>Status</th>
+        <th>CTWA CLID</th>
+        <th>Valor</th>
+        <th>Data</th>
+        <th>Ação</th>
+      </tr>
+    </thead>
+    <tbody id="leads-body">
+      <tr><td colspan="7" class="empty">Carregando...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal de venda -->
+<div class="modal-backdrop" id="modal">
+  <div class="modal">
+    <h2>✅ Registrar Venda</h2>
+    <label>Nome do cliente (opcional)</label>
+    <input type="text" id="modal-nome" placeholder="Ex: João Silva" />
+    <label>Valor da venda (R$)</label>
+    <input type="number" id="modal-valor" placeholder="Ex: 297.00" step="0.01" min="0" />
+    <div class="modal-actions">
+      <button class="btn-cancel" id="modal-cancel">Cancelar</button>
+      <button class="btn-confirm" id="modal-confirm">Confirmar Venda</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let allLeads = [];
+let currentFilter = 'todos';
+let pendingLeadId = null;
+
+async function loadLeads() {
+  const res = await fetch('/api/leads');
+  allLeads = await res.json();
+  updateStats();
+  renderTable();
+}
+
+function updateStats() {
+  const vendas = allLeads.filter(l => l.status === 'comprou');
+  const receita = vendas.reduce((s, l) => s + (parseFloat(l.valor) || 0), 0);
+  const taxa = allLeads.length ? ((vendas.length / allLeads.length) * 100).toFixed(1) : 0;
+
+  document.getElementById('total-leads').textContent = allLeads.length;
+  document.getElementById('total-vendas').textContent = vendas.length;
+  document.getElementById('total-receita').textContent = 'R$ ' + receita.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+  document.getElementById('taxa-conversao').textContent = taxa + '%';
+}
+
+function renderTable() {
+  const filtered = currentFilter === 'todos'
+    ? allLeads
+    : allLeads.filter(l => l.status === currentFilter);
+
+  const tbody = document.getElementById('leads-body');
+
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty">Nenhum lead encontrado</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(lead => {
+    const date = new Date(lead.created_at).toLocaleString('pt-BR');
+    const clidHtml = lead.ctwa_clid
+      ? `<span class="clid-chip" title="${lead.ctwa_clid}">${lead.ctwa_clid}</span>`
+      : `<span class="no-clid">—</span>`;
+
+    const valor = lead.valor
+      ? 'R$ ' + parseFloat(lead.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+      : '—';
+
+    const acaoHtml = lead.status === 'comprou'
+      ? (lead.purchase_sent_at
+          ? `<span class="sent-label">✓ Enviado Meta</span>`
+          : `<span class="sent-label">✓ Vendido</span>`)
+      : `<button class="btn-venda" onclick="abrirModal('${lead.id}')">Registrar Venda</button>`;
+
+    return `<tr>
+      <td>${lead.phone}</td>
+      <td>${lead.nome || '—'}</td>
+      <td><span class="badge ${lead.status}">${lead.status === 'comprou' ? 'Comprou' : 'Lead'}</span></td>
+      <td>${clidHtml}</td>
+      <td>${valor}</td>
+      <td>${date}</td>
+      <td>${acaoHtml}</td>
+    </tr>`;
+  }).join('');
+}
+
+function abrirModal(leadId) {
+  pendingLeadId = leadId;
+  document.getElementById('modal-nome').value = '';
+  document.getElementById('modal-valor').value = '';
+  document.getElementById('modal').classList.add('open');
+  setTimeout(() => document.getElementById('modal-valor').focus(), 100);
+}
+
+document.getElementById('modal-cancel').onclick = () => {
+  document.getElementById('modal').classList.remove('open');
+  pendingLeadId = null;
+};
+
+document.getElementById('modal-confirm').onclick = async () => {
+  const valor = document.getElementById('modal-valor').value;
+  const nome = document.getElementById('modal-nome').value;
+  const btn = document.getElementById('modal-confirm');
+
+  if (!valor || parseFloat(valor) <= 0) {
+    alert('Informe um valor válido');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+
+  try {
+    const res = await fetch(`/api/leads/${pendingLeadId}/venda`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ valor: parseFloat(valor), nome }),
+    });
+    const data = await res.json();
+
+    if (data.ok) {
+      document.getElementById('modal').classList.remove('open');
+      await loadLeads();
+    } else {
+      alert('Erro: ' + (data.error || 'desconhecido'));
+    }
+  } catch (err) {
+    alert('Erro de conexão');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Confirmar Venda';
+    pendingLeadId = null;
+  }
+};
+
+// Fechar modal clicando fora
+document.getElementById('modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) {
+    e.currentTarget.classList.remove('open');
+    pendingLeadId = null;
+  }
+});
+
+// Filtros
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+    renderTable();
+  });
+});
+
+// Atualiza a cada 30s
+loadLeads();
+setInterval(loadLeads, 30000);
+</script>
+</body>
+</html>
