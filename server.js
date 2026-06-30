@@ -42,20 +42,21 @@ app.post('/webhook', async (req, res) => {
         const value = change.value;
         const messages = value.messages || [];
 
+        const contacts = value.contacts || [];
+
         for (const msg of messages) {
           const phone = msg.from;
           const referral = msg.referral;
-
-          // Só processa se vier de anúncio (tem referral com ctwa_clid)
           const ctwa_clid = referral?.ctwa_clid || null;
+          const profileName = contacts.find(c => c.wa_id === phone)?.profile?.name || null;
+          const body = extractMessageBody(msg);
+          const nowIso = new Date().toISOString();
 
           console.log(`[Webhook] Mensagem de ${phone}, ctwa_clid: ${ctwa_clid}`);
 
-          // Salva ou atualiza o lead (upsert por telefone)
-          // Só atualiza ctwa_clid se ainda não tiver um salvo
           const { data: existing } = await supabase
             .from('leads')
-            .select('id, ctwa_clid')
+            .select('id, ctwa_clid, nome')
             .eq('phone', phone)
             .single();
 
@@ -63,22 +64,165 @@ app.post('/webhook', async (req, res) => {
             await supabase.from('leads').insert({
               phone,
               ctwa_clid,
+              nome: profileName,
+              status: 'novo',
+              last_message_at: nowIso,
             });
             console.log(`[DB] Novo lead salvo: ${phone}`);
-          } else if (ctwa_clid && !existing.ctwa_clid) {
-            // atualiza ctwa_clid se chegou agora (primeira msg com referral)
-            await supabase
-              .from('leads')
-              .update({ ctwa_clid })
-              .eq('id', existing.id);
-            console.log(`[DB] ctwa_clid atualizado para ${phone}`);
+          } else {
+            const updates = { last_message_at: nowIso };
+            if (ctwa_clid && !existing.ctwa_clid) updates.ctwa_clid = ctwa_clid;
+            if (profileName && !existing.nome) updates.nome = profileName;
+            await supabase.from('leads').update(updates).eq('id', existing.id);
           }
+
+          // Salva a mensagem recebida no histórico
+          await supabase.from('messages').insert({
+            phone,
+            direction: 'in',
+            body,
+            wa_message_id: msg.id || null,
+            timestamp: nowIso,
+          });
         }
       }
     }
   } catch (err) {
     console.error('[Webhook] Erro:', err.message);
   }
+});
+
+function extractMessageBody(msg) {
+  switch (msg.type) {
+    case 'text': return msg.text?.body || '';
+    case 'image': return msg.image?.caption || '[Imagem]';
+    case 'video': return msg.video?.caption || '[Vídeo]';
+    case 'audio': return '[Áudio]';
+    case 'document': return msg.document?.caption || `[Documento] ${msg.document?.filename || ''}`;
+    case 'sticker': return '[Figurinha]';
+    case 'location': return '[Localização]';
+    case 'button': return msg.button?.text || '[Botão]';
+    case 'interactive':
+      return msg.interactive?.button_reply?.title || msg.interactive?.list_reply?.title || '[Interação]';
+    default: return `[${msg.type}]`;
+  }
+}
+
+// ─── API: Conversas (lista estilo WhatsApp Web) ───────────────────────────────
+
+app.get('/api/conversations', async (req, res) => {
+  const { data: leads, error } = await supabase
+    .from('leads')
+    .select('*')
+    .order('last_message_at', { ascending: false, nullsFirst: false });
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  // Busca a última mensagem de cada telefone
+  const conversations = await Promise.all(
+    leads.map(async (lead) => {
+      const { data: lastMsgs } = await supabase
+        .from('messages')
+        .select('body, direction, timestamp')
+        .eq('phone', lead.phone)
+        .order('timestamp', { ascending: false })
+        .limit(1);
+
+      const lastMessage = lastMsgs?.[0] || null;
+      return { ...lead, lastMessage };
+    })
+  );
+
+  res.json(conversations);
+});
+
+// ─── API: Histórico de mensagens de um contato ────────────────────────────────
+
+app.get('/api/messages/:phone', async (req, res) => {
+  const { phone } = req.params;
+  const { data, error } = await supabase
+    .from('messages')
+    .select('*')
+    .eq('phone', phone)
+    .order('timestamp', { ascending: true });
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+// ─── API: Enviar mensagem via Cloud API ───────────────────────────────────────
+
+app.post('/api/messages/:phone/send', async (req, res) => {
+  const { phone } = req.params;
+  const { body } = req.body;
+
+  if (!body || !body.trim()) {
+    return res.status(400).json({ error: 'Mensagem vazia' });
+  }
+
+  try {
+    const response = await fetch(
+      `https://graph.facebook.com/v25.0/${process.env.PHONE_NUMBER_ID}/messages`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          to: phone,
+          type: 'text',
+          text: { body },
+        }),
+      }
+    );
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error('[WhatsApp Send] Erro:', JSON.stringify(result));
+      return res.status(502).json({ error: result.error?.message || 'Falha ao enviar mensagem' });
+    }
+
+    const nowIso = new Date().toISOString();
+    await supabase.from('messages').insert({
+      phone,
+      direction: 'out',
+      body,
+      wa_message_id: result.messages?.[0]?.id || null,
+      timestamp: nowIso,
+    });
+    await supabase.from('leads').update({ last_message_at: nowIso }).eq('phone', phone);
+
+    res.json({ ok: true, result });
+  } catch (err) {
+    console.error('[WhatsApp Send] Erro:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── API: Atualizar status do lead ────────────────────────────────────────────
+
+const VALID_STATUSES = ['novo', 'em_atendimento', 'comprou', 'nao_comprou'];
+
+app.patch('/api/leads/:id/status', async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  if (!VALID_STATUSES.includes(status)) {
+    return res.status(400).json({ error: 'Status inválido' });
+  }
+
+  const { error } = await supabase.from('leads').update({ status }).eq('id', id);
+  if (error) return res.status(500).json({ error: error.message });
+
+  res.json({ ok: true });
+});
+
+// ─── CRM ────────────────────────────────────────────────────────────────────
+
+app.get('/crm', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'crm.html'));
 });
 
 // ─── API: Listar Leads ────────────────────────────────────────────────────────
