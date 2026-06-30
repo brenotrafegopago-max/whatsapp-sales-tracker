@@ -225,6 +225,47 @@ app.get('/crm', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'crm.html'));
 });
 
+app.get('/crm/config', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'crm-config.html'));
+});
+
+// ─── API: Quick Replies ───────────────────────────────────────────────────────
+
+app.get('/api/quick-replies', async (req, res) => {
+  const { data, error } = await supabase
+    .from('quick_replies')
+    .select('*')
+    .order('position', { ascending: true });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+app.post('/api/quick-replies', async (req, res) => {
+  const { body } = req.body;
+  if (!body?.trim()) return res.status(400).json({ error: 'Texto vazio' });
+  const { data: existing } = await supabase.from('quick_replies').select('position').order('position', { ascending: false }).limit(1);
+  const position = (existing?.[0]?.position ?? -1) + 1;
+  const { data, error } = await supabase.from('quick_replies').insert({ body: body.trim(), position }).select().single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+app.put('/api/quick-replies/:id', async (req, res) => {
+  const { id } = req.params;
+  const { body } = req.body;
+  if (!body?.trim()) return res.status(400).json({ error: 'Texto vazio' });
+  const { error } = await supabase.from('quick_replies').update({ body: body.trim() }).eq('id', id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ ok: true });
+});
+
+app.delete('/api/quick-replies/:id', async (req, res) => {
+  const { id } = req.params;
+  const { error } = await supabase.from('quick_replies').delete().eq('id', id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ ok: true });
+});
+
 // ─── API: Listar Leads ────────────────────────────────────────────────────────
 
 app.get('/api/leads', async (req, res) => {

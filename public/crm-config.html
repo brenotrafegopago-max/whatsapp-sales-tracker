@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Respostas Rápidas — Config</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0b141a; color: #e9edef; min-height: 100vh; }
+
+header { background: #111b21; border-bottom: 1px solid #222d34; padding: 1rem 1.5rem; display: flex; align-items: center; gap: 1rem; }
+header a { color: #8696a0; text-decoration: none; font-size: 1.2rem; }
+header a:hover { color: #e9edef; }
+header h1 { font-size: 1.05rem; font-weight: 600; }
+
+.container { max-width: 680px; margin: 0 auto; padding: 1.5rem 1rem; }
+
+.add-box { background: #111b21; border: 1px solid #222d34; border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem; }
+.add-box h2 { font-size: 0.88rem; color: #8696a0; margin-bottom: 0.75rem; }
+.add-box textarea { width: 100%; background: #0b141a; border: 1px solid #2a3942; color: #e9edef; padding: 0.7rem 0.9rem; border-radius: 8px; font-size: 0.9rem; resize: vertical; min-height: 80px; outline: none; font-family: inherit; }
+.add-box textarea:focus { border-color: #00a884; }
+.add-box button { margin-top: 0.6rem; background: #00a884; color: #000; border: none; padding: 0.5rem 1.25rem; border-radius: 7px; font-weight: 700; font-size: 0.88rem; cursor: pointer; }
+.add-box button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.list { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.reply-card { background: #111b21; border: 1px solid #222d34; border-radius: 10px; padding: 1rem 1.1rem; }
+.reply-card.editing { border-color: #00a884; }
+.reply-body { font-size: 0.9rem; line-height: 1.45; white-space: pre-wrap; word-break: break-word; }
+.reply-body.hidden { display: none; }
+.reply-textarea { width: 100%; background: #0b141a; border: 1px solid #2a3942; color: #e9edef; padding: 0.6rem 0.8rem; border-radius: 7px; font-size: 0.88rem; resize: vertical; min-height: 72px; outline: none; font-family: inherit; }
+.reply-textarea:focus { border-color: #00a884; }
+
+.reply-actions { display: flex; gap: 0.5rem; margin-top: 0.65rem; justify-content: flex-end; }
+.btn-edit { background: #2a3942; border: none; color: #e9edef; padding: 0.35rem 0.85rem; border-radius: 6px; font-size: 0.8rem; cursor: pointer; }
+.btn-edit:hover { background: #374951; }
+.btn-save { background: #00a884; border: none; color: #000; padding: 0.35rem 0.85rem; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+.btn-del { background: none; border: 1px solid #f87171; color: #f87171; padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 0.8rem; cursor: pointer; }
+.btn-del:hover { background: #f87171; color: #000; }
+.btn-cancel-edit { background: none; border: 1px solid #2a3942; color: #8696a0; padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 0.8rem; cursor: pointer; }
+
+.empty { text-align: center; color: #5a6b73; padding: 2rem; font-size: 0.9rem; }
+.toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #00a884; color: #000; padding: 0.6rem 1.1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; opacity: 0; transform: translateY(8px); transition: all 0.2s; pointer-events: none; }
+.toast.show { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<header>
+  <a href="/crm">←</a>
+  <h1>⚡ Respostas Rápidas</h1>
+</header>
+
+<div class="container">
+  <div class="add-box">
+    <h2>NOVA RESPOSTA RÁPIDA</h2>
+    <textarea id="new-body" placeholder="Digite o texto da resposta..."></textarea>
+    <button id="btn-add" onclick="addReply()">+ Adicionar</button>
+  </div>
+
+  <div class="list" id="reply-list">
+    <div class="empty">Carregando...</div>
+  </div>
+</div>
+
+<script>
+let replies = [];
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function escHtml(str) {
+  const d = document.createElement('div'); d.textContent = str; return d.innerHTML;
+}
+
+async function load() {
+  const res = await fetch('/api/quick-replies');
+  replies = await res.json();
+  render();
+}
+
+function render() {
+  const list = document.getElementById('reply-list');
+  if (!replies.length) {
+    list.innerHTML = '<div class="empty">Nenhuma resposta cadastrada ainda.</div>';
+    return;
+  }
+  list.innerHTML = replies.map((r, i) => `
+    <div class="reply-card" id="card-${r.id}">
+      <div class="reply-body" id="body-${r.id}">${escHtml(r.body)}</div>
+      <textarea class="reply-textarea hidden" id="ta-${r.id}">${escHtml(r.body)}</textarea>
+      <div class="reply-actions">
+        <button class="btn-del" onclick="deleteReply('${r.id}')">🗑 Apagar</button>
+        <button class="btn-edit" id="edit-btn-${r.id}" onclick="startEdit('${r.id}')">✏️ Editar</button>
+        <button class="btn-save hidden" id="save-btn-${r.id}" onclick="saveEdit('${r.id}')">✔ Salvar</button>
+        <button class="btn-cancel-edit hidden" id="cancel-btn-${r.id}" onclick="cancelEdit('${r.id}')">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function startEdit(id) {
+  const r = replies.find(x => x.id === id);
+  document.getElementById(`ta-${id}`).value = r.body;
+  document.getElementById(`body-${id}`).classList.add('hidden');
+  document.getElementById(`ta-${id}`).classList.remove('hidden');
+  document.getElementById(`edit-btn-${id}`).classList.add('hidden');
+  document.getElementById(`save-btn-${id}`).classList.remove('hidden');
+  document.getElementById(`cancel-btn-${id}`).classList.remove('hidden');
+  document.getElementById(`card-${id}`).classList.add('editing');
+  document.getElementById(`ta-${id}`).focus();
+}
+
+function cancelEdit(id) {
+  document.getElementById(`body-${id}`).classList.remove('hidden');
+  document.getElementById(`ta-${id}`).classList.add('hidden');
+  document.getElementById(`edit-btn-${id}`).classList.remove('hidden');
+  document.getElementById(`save-btn-${id}`).classList.add('hidden');
+  document.getElementById(`cancel-btn-${id}`).classList.add('hidden');
+  document.getElementById(`card-${id}`).classList.remove('editing');
+}
+
+async function saveEdit(id) {
+  const body = document.getElementById(`ta-${id}`).value.trim();
+  if (!body) { alert('Texto não pode ser vazio'); return; }
+  const res = await fetch(`/api/quick-replies/${id}`, {
+    method: 'PUT',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ body }),
+  });
+  if ((await res.json()).ok) { showToast('Salvo!'); await load(); }
+}
+
+async function deleteReply(id) {
+  if (!confirm('Apagar esta resposta?')) return;
+  const res = await fetch(`/api/quick-replies/${id}`, { method: 'DELETE' });
+  if ((await res.json()).ok) { showToast('Apagado'); await load(); }
+}
+
+async function addReply() {
+  const body = document.getElementById('new-body').value.trim();
+  if (!body) { alert('Digite o texto da resposta'); return; }
+  const btn = document.getElementById('btn-add');
+  btn.disabled = true;
+  const res = await fetch('/api/quick-replies', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ body }),
+  });
+  const data = await res.json();
+  btn.disabled = false;
+  if (data.id) {
+    document.getElementById('new-body').value = '';
+    showToast('Adicionado!');
+    await load();
+  }
+}
+
+document.getElementById('new-body').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.ctrlKey) addReply();
+});
+
+load();
+</script>
+</body>
+</html>
