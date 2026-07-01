@@ -113,27 +113,20 @@ function extractMessageBody(msg) {
 // ─── API: Conversas (lista estilo WhatsApp Web) ───────────────────────────────
 
 app.get('/api/conversations', async (req, res) => {
-  const { data: leads, error } = await supabase
-    .from('leads')
-    .select('*')
-    .order('last_message_at', { ascending: false, nullsFirst: false });
-
+  const { data, error } = await supabase.rpc('get_conversations');
   if (error) return res.status(500).json({ error: error.message });
 
-  // Busca a última mensagem de cada telefone
-  const conversations = await Promise.all(
-    leads.map(async (lead) => {
-      const { data: lastMsgs } = await supabase
-        .from('messages')
-        .select('body, direction, timestamp')
-        .eq('phone', lead.phone)
-        .order('timestamp', { ascending: false })
-        .limit(1);
-
-      const lastMessage = lastMsgs?.[0] || null;
-      return { ...lead, lastMessage };
-    })
-  );
+  const conversations = (data || []).map(row => ({
+    id: row.id, phone: row.phone, nome: row.nome, ctwa_clid: row.ctwa_clid,
+    status: row.status, valor: row.valor, created_at: row.created_at,
+    updated_at: row.updated_at, purchase_sent_at: row.purchase_sent_at,
+    last_message_at: row.last_message_at,
+    lastMessage: row.last_msg_body != null ? {
+      body: row.last_msg_body,
+      direction: row.last_msg_direction,
+      timestamp: row.last_msg_timestamp,
+    } : null,
+  }));
 
   res.json(conversations);
 });
