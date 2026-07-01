@@ -133,6 +133,8 @@ app.get('/api/conversations', async (req, res) => {
     updated_at: row.updated_at, purchase_sent_at: row.purchase_sent_at,
     last_message_at: row.last_message_at,
     profile_pic_url: row.profile_pic_url || null,
+    tags: row.tags || [],
+    notas: row.notas || null,
     lastMessage: row.last_msg_body != null ? {
       body: row.last_msg_body,
       direction: row.last_msg_direction,
@@ -212,7 +214,7 @@ app.post('/api/messages/:phone/send', async (req, res) => {
 
 // ─── API: Atualizar status do lead ────────────────────────────────────────────
 
-const VALID_STATUSES = ['novo', 'em_atendimento', 'comprou', 'nao_comprou'];
+const VALID_STATUSES = ['novo', 'em_atendimento', 'aguardando_pix', 'comprou', 'nao_comprou'];
 
 app.patch('/api/leads/:id/status', async (req, res) => {
   const { id } = req.params;
@@ -271,6 +273,25 @@ app.put('/api/quick-replies/:id', async (req, res) => {
 app.delete('/api/quick-replies/:id', async (req, res) => {
   const { id } = req.params;
   const { error } = await supabase.from('quick_replies').delete().eq('id', id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ ok: true });
+});
+
+// ─── API: Tags e Notas ───────────────────────────────────────────────────────
+
+app.patch('/api/leads/:id/tags', async (req, res) => {
+  const { id } = req.params;
+  const { tags } = req.body;
+  if (!Array.isArray(tags)) return res.status(400).json({ error: 'tags deve ser array' });
+  const { error } = await supabase.from('leads').update({ tags }).eq('id', id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ ok: true });
+});
+
+app.patch('/api/leads/:id/notas', async (req, res) => {
+  const { id } = req.params;
+  const { notas } = req.body;
+  const { error } = await supabase.from('leads').update({ notas: notas ?? null }).eq('id', id);
   if (error) return res.status(500).json({ error: error.message });
   res.json({ ok: true });
 });
