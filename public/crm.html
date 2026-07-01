@@ -860,7 +860,7 @@ async function sendMsg(){
 // Send media
 async function sendMedia(input,_t){
   const file=input.files[0];if(!file)return;
-  toast(`Enviando ${_t==='image'?'imagem':'áudio'}...','var(--warn)');
+  toast(`Enviando ${_t==='image'?'imagem':'áudio'}...`, 'var(--warn)');
   const fd=new FormData();fd.append('file',file);
   try{
     const r=await fetch(`/api/messages/${currentPhone}/media`,{method:'POST',body:fd});
