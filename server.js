@@ -367,13 +367,12 @@ app.get('/api/leads', async (req, res) => {
 
 app.post('/api/leads/:id/venda', async (req, res) => {
   const { id } = req.params;
-  const { valor, nome } = req.body;
+  const { valor, nome, tipo_leitura } = req.body;
 
   if (!valor || isNaN(parseFloat(valor))) {
     return res.status(400).json({ error: 'Valor inválido' });
   }
 
-  // Busca o lead
   const { data: lead, error: fetchErr } = await supabase
     .from('leads')
     .select('*')
@@ -382,16 +381,38 @@ app.post('/api/leads/:id/venda', async (req, res) => {
 
   if (fetchErr || !lead) return res.status(404).json({ error: 'Lead não encontrado' });
 
-  // Atualiza status no Supabase
-  await supabase
-    .from('leads')
-    .update({ status: 'comprou', valor: parseFloat(valor), nome })
-    .eq('id', id);
+  const updateData = { status: 'comprou', valor: parseFloat(valor) };
+  if (nome?.trim()) updateData.nome = nome.trim();
+
+  await supabase.from('leads').update(updateData).eq('id', id);
 
   // Dispara evento para Meta Conversions API
   let metaResult = null;
   if (lead.ctwa_clid && process.env.META_PIXEL_ID && process.env.META_ACCESS_TOKEN) {
     metaResult = await sendMetaPurchaseEvent(lead, parseFloat(valor));
+  }
+
+  // Notificação WhatsApp para número pessoal
+  try {
+    const hora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
+    const nomeCliente = nome?.trim() || lead.nome || 'Sem nome';
+    const valorFmt = parseFloat(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const tipoInfo = tipo_leitura ? ` | Tipo: ${tipo_leitura}` : '';
+    const notifMsg = `💰 Venda registrada!\nCliente: ${nomeCliente}\nValor: ${valorFmt}${tipoInfo}\nHorário: ${hora}`;
+
+    await fetch(`https://graph.facebook.com/v25.0/${process.env.PHONE_NUMBER_ID}/messages`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        to: '5531975265306',
+        type: 'text',
+        text: { body: notifMsg },
+      }),
+    });
+    console.log(`[Notif] Venda notificada para número pessoal`);
+  } catch (e) {
+    console.error('[Notif] Erro ao enviar notificação:', e.message);
   }
 
   res.json({ ok: true, metaResult });

@@ -3,208 +3,408 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>CRM — WhatsApp</title>
+<title>CRM — Márcia Taróloga</title>
 <style>
+:root {
+  --bg:        #0b141a;
+  --surface:   #111b21;
+  --surface2:  #202c33;
+  --surface3:  #2a3942;
+  --border:    #1f2c34;
+  --accent:    #00a884;
+  --accent-dk: #008f70;
+  --text:      #e9edef;
+  --muted:     #8696a0;
+  --bubble-in: #202c33;
+  --bubble-out:#005c4b;
+  --danger:    #f87171;
+  --warn:      #fbbf24;
+  --radius:    12px;
+  --radius-sm: 8px;
+  font-size: 15px;
+}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0b141a;color:#e9edef}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.4}
+button,input,select,textarea{font-family:inherit;font-size:inherit}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:4px}
 
-/* ── Shell ── */
+/* ── Layout shell ── */
 .shell{display:flex;height:100vh}
 
-/* ── Nav lateral ── */
+/* ── Side nav ── */
 .side-nav{
-  width:56px;background:#111b21;
-  border-right:1px solid #222d34;
-  display:flex;flex-direction:column;align-items:center;
-  padding:0.75rem 0;gap:0.25rem;flex-shrink:0;
+  width:54px;background:var(--surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;align-items:center;padding:.6rem 0;gap:.3rem;flex-shrink:0;
 }
 .nav-btn{
-  width:42px;height:42px;border-radius:10px;border:none;
-  background:none;color:#8696a0;font-size:1.25rem;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  transition:all 0.15s;
+  width:40px;height:40px;border-radius:10px;border:none;background:none;
+  color:var(--muted);font-size:1.2rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;
+  position:relative;
 }
-.nav-btn:hover{background:#1e2d37;color:#e9edef}
-.nav-btn.active{background:#00a884;color:#000}
-.nav-btn title{display:none}
+.nav-btn:hover{background:var(--surface2);color:var(--text)}
+.nav-btn.active{background:var(--accent);color:#fff}
+.nav-tooltip{
+  position:absolute;left:52px;background:#000;color:#fff;
+  font-size:.72rem;padding:.25rem .55rem;border-radius:5px;
+  white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:99;
+}
+.nav-btn:hover .nav-tooltip{opacity:1}
 
 /* ── Views ── */
-.view{display:none;flex:1;overflow:hidden;height:100%}
+.view{display:none;flex:1;height:100%;overflow:hidden}
 .view.active{display:flex}
 
-/* ══════════════════════════════════════════════════
-   VIEW: CRM (chat)
-══════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════
+   CRM VIEW
+════════════════════════════════════════════ */
 .crm-layout{display:flex;width:100%;height:100%}
 
-/* Sidebar conversas */
-.sidebar{width:340px;min-width:260px;background:#111b21;border-right:1px solid #222d34;display:flex;flex-direction:column}
-.sidebar-header{padding:0.8rem 0.9rem;border-bottom:1px solid #222d34}
-.sidebar-header h2{font-size:0.95rem;font-weight:600;margin-bottom:0.55rem}
-.search-input{width:100%;background:#202c33;border:none;color:#e9edef;padding:0.42rem 0.8rem;border-radius:8px;font-size:0.84rem;outline:none}
-.search-input::placeholder{color:#8696a0}
+/* Sidebar */
+.sidebar{
+  width:330px;min-width:250px;
+  background:var(--surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+}
+.sidebar-hdr{padding:.85rem .9rem .6rem;border-bottom:1px solid var(--border)}
+.sidebar-hdr h2{font-size:.95rem;font-weight:600;color:var(--text);margin-bottom:.55rem}
+.search-wrap{position:relative}
+.search-wrap svg{position:absolute;left:.65rem;top:50%;transform:translateY(-50%);opacity:.4;pointer-events:none}
+.search-in{
+  width:100%;background:var(--surface2);border:none;color:var(--text);
+  padding:.42rem .8rem .42rem 2rem;border-radius:20px;font-size:.83rem;outline:none;
+}
+.search-in::placeholder{color:var(--muted)}
 
-.status-filters{display:flex;border-bottom:1px solid #222d34;overflow-x:auto}
-.status-filters::-webkit-scrollbar{display:none}
-.sf-btn{flex:1;background:none;border:none;color:#8696a0;font-size:0.68rem;padding:0.5rem 0.2rem;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all 0.15s;min-width:55px}
-.sf-btn:hover{color:#e9edef}
-.sf-btn.active{color:#00a884;border-bottom-color:#00a884;font-weight:600}
-.sf-badge{display:inline-block;background:#2a3942;border-radius:99px;padding:0 4px;font-size:0.62rem;margin-left:2px}
-.sf-btn.active .sf-badge{background:#00a884;color:#000}
+/* Status filter tabs */
+.sf-tabs{display:flex;border-bottom:1px solid var(--border);overflow-x:auto}
+.sf-tabs::-webkit-scrollbar{display:none}
+.sf-tab{
+  flex:1;background:none;border:none;color:var(--muted);
+  font-size:.69rem;padding:.5rem .15rem;cursor:pointer;
+  border-bottom:2px solid transparent;white-space:nowrap;
+  transition:all .15s;min-width:52px;
+}
+.sf-tab:hover{color:var(--text)}
+.sf-tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+.sf-badge{
+  display:inline-block;background:var(--surface3);
+  border-radius:99px;padding:0 5px;font-size:.62rem;margin-left:2px;
+}
+.sf-tab.active .sf-badge{background:var(--accent);color:#000}
 
+/* Conv list */
 .conv-list{flex:1;overflow-y:auto}
-.conv-item{display:flex;align-items:center;gap:0.65rem;padding:0.6rem 0.85rem;cursor:pointer;border-bottom:1px solid #1a2329;transition:background 0.1s;position:relative}
+.conv-item{
+  display:flex;align-items:center;gap:.65rem;
+  padding:.65rem .85rem;cursor:pointer;
+  border-bottom:1px solid var(--border);transition:background .1s;
+}
 .conv-item:hover{background:#182229}
-.conv-item.active{background:#2a3942}
-.avatar{width:42px;height:42px;border-radius:50%;background:#2a3942;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.95rem;color:#8696a0;flex-shrink:0;position:relative}
-.new-dot{position:absolute;top:1px;right:1px;width:9px;height:9px;background:#00a884;border-radius:50%;border:2px solid #111b21;animation:pulse 1.4s ease-in-out infinite}
+.conv-item.active{background:var(--surface3)}
+
+.avatar{
+  width:44px;height:44px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:.9rem;color:#fff;
+  flex-shrink:0;position:relative;
+}
+.new-dot{
+  position:absolute;top:1px;right:1px;width:10px;height:10px;
+  background:var(--accent);border-radius:50%;border:2px solid var(--surface);
+  animation:pulse 1.5s ease-in-out infinite;
+}
 @keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.4);opacity:.7}}
+
 .conv-info{flex:1;min-width:0}
-.conv-top{display:flex;justify-content:space-between;align-items:baseline}
-.conv-name{font-size:0.88rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:170px}
-.conv-time{font-size:0.68rem;color:#8696a0;flex-shrink:0}
-.conv-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:.12rem}
-.conv-preview{font-size:0.77rem;color:#8696a0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+.conv-top{display:flex;justify-content:space-between;align-items:baseline;gap:.4rem}
+.conv-name{font-size:.88rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.conv-time{font-size:.68rem;color:var(--muted);flex-shrink:0}
+.conv-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:.1rem}
+.conv-preview{font-size:.77rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:190px}
 .sdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 .sdot.novo,.sdot.lead{background:#60a5fa}
-.sdot.em_atendimento{background:#fbbf24}
+.sdot.em_atendimento{background:var(--warn)}
 .sdot.comprou{background:#4ade80}
-.sdot.nao_comprou{background:#f87171}
-.empty-list{padding:2rem 1rem;color:#5a6b73;text-align:center;font-size:0.85rem}
+.sdot.nao_comprou{background:var(--danger)}
 
 /* Chat area */
-.chat-area{flex:1;display:flex;flex-direction:column;background:#0b141a;min-width:0}
-.chat-empty{flex:1;display:flex;align-items:center;justify-content:center;color:#5a6b73;flex-direction:column;gap:.5rem;font-size:.95rem}
+.chat-area{flex:1;display:flex;flex-direction:column;background:var(--bg);min-width:0}
+.chat-empty{flex:1;display:flex;align-items:center;justify-content:center;color:var(--muted);flex-direction:column;gap:.6rem}
 
 /* Chat header */
-.chat-hdr{background:#202c33;padding:.6rem .9rem;border-bottom:1px solid #222d34;flex-shrink:0}
-.chat-hdr-row1{display:flex;align-items:center;gap:.65rem}
-.chat-hdr-right{display:flex;align-items:center;gap:.45rem;margin-left:auto;flex-shrink:0}
-.status-select{background:#2a3942;color:#e9edef;border:none;padding:.3rem .55rem;border-radius:6px;font-size:.76rem;cursor:pointer;outline:none}
-.status-select option{background:#111b21}
-.btn-sale{background:#fbbf24;color:#000;border:none;padding:.3rem .65rem;border-radius:6px;font-size:.76rem;font-weight:700;cursor:pointer;white-space:nowrap}
-.btn-sale:hover{opacity:.85}
-.back-btn{display:none;background:none;border:none;color:#e9edef;font-size:1.25rem;cursor:pointer;flex-shrink:0}
+.chat-hdr{
+  background:var(--surface2);padding:.7rem 1rem;
+  border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.chat-hdr-row{display:flex;align-items:center;gap:.7rem}
+.chat-hdr-info{flex:1;min-width:0}
+.name-edit-wrap{display:flex;align-items:center;gap:.4rem}
+.name-display{
+  font-size:.95rem;font-weight:600;cursor:pointer;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;
+}
+.name-display:hover{text-decoration:underline dotted var(--muted)}
+.name-input{
+  background:var(--surface3);border:1px solid var(--accent);
+  color:var(--text);padding:.2rem .5rem;border-radius:6px;
+  font-size:.9rem;outline:none;width:175px;
+}
+.chat-sub{font-size:.71rem;color:var(--muted);margin-top:.15rem;display:flex;align-items:center;gap:.5rem}
+.purchase-badge{
+  background:#14532d;color:#4ade80;
+  font-size:.65rem;font-weight:600;padding:.1rem .45rem;border-radius:99px;
+}
 
-/* Editable name */
-.name-edit-wrap{display:flex;align-items:center;gap:.4rem;min-width:0}
-.name-display{font-size:.93rem;font-weight:600;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
-.name-display:hover{text-decoration:underline dotted #8696a0}
-.name-input{background:#2a3942;border:1px solid #00a884;color:#e9edef;padding:.25rem .55rem;border-radius:6px;font-size:.9rem;outline:none;width:180px}
-.chat-hdr-sub{font-size:.72rem;color:#8696a0;margin-top:.18rem;padding-left:50px}
-
-/* Sale bar */
-.sale-bar{background:#1a2329;border-bottom:1px solid #222d34;padding:.55rem .9rem;display:flex;align-items:center;gap:.6rem;flex-shrink:0}
-.sale-bar label{font-size:.78rem;color:#8696a0;white-space:nowrap}
-.sale-input{background:#202c33;border:1px solid #2a3942;color:#e9edef;padding:.4rem .7rem;border-radius:7px;font-size:.86rem;outline:none;width:140px}
-.sale-input:focus{border-color:#fbbf24}
-.btn-sale-confirm{background:#4ade80;color:#000;border:none;padding:.4rem .9rem;border-radius:7px;font-weight:700;font-size:.8rem;cursor:pointer}
-.btn-sale-confirm:disabled{opacity:.5;cursor:not-allowed}
-.btn-sale-cancel{background:none;border:1px solid #2a3942;color:#8696a0;padding:.4rem .65rem;border-radius:7px;font-size:.8rem;cursor:pointer}
+.chat-hdr-right{display:flex;align-items:center;gap:.45rem;flex-shrink:0}
+.status-sel{
+  background:var(--surface3);color:var(--text);border:none;
+  padding:.3rem .6rem;border-radius:7px;font-size:.76rem;cursor:pointer;outline:none;
+}
+.status-sel option{background:var(--surface)}
+.back-btn{display:none;background:none;border:none;color:var(--text);font-size:1.2rem;cursor:pointer;flex-shrink:0}
 
 /* Messages */
-.messages{flex:1;overflow-y:auto;padding:.9rem 4%;display:flex;flex-direction:column;gap:.3rem}
-.bubble{max-width:65%;padding:.48rem .7rem;border-radius:8px;font-size:.86rem;line-height:1.38;word-wrap:break-word}
-.bubble.in{align-self:flex-start;background:#202c33;border-top-left-radius:2px}
-.bubble.out{align-self:flex-end;background:#005c4b;border-top-right-radius:2px}
-.bubble .time{display:block;text-align:right;font-size:.62rem;color:#8696a0;margin-top:.22rem}
-.bubble.media-bubble{font-style:italic;color:#aaa}
-.bubble .media-icon{font-size:1.1rem;margin-right:.3rem}
+.messages{flex:1;overflow-y:auto;padding:1rem 5%;display:flex;flex-direction:column;gap:.25rem}
+
+.date-sep{
+  align-self:center;
+  background:var(--surface2);color:var(--muted);
+  font-size:.72rem;padding:.2rem .7rem;border-radius:99px;
+  margin:.5rem 0;
+}
+
+.bubble{
+  max-width:68%;padding:.5rem .78rem .35rem;
+  border-radius:10px;font-size:.88rem;line-height:1.42;
+  word-wrap:break-word;position:relative;
+  box-shadow:0 1px 2px rgba(0,0,0,.25);
+}
+.bubble.in{
+  align-self:flex-start;background:var(--bubble-in);
+  border-top-left-radius:2px;
+}
+.bubble.out{
+  align-self:flex-end;background:var(--bubble-out);
+  border-top-right-radius:2px;
+}
+.bubble.media-b{font-style:italic;color:#aaa}
+.btime{
+  display:block;text-align:right;
+  font-size:.62rem;color:var(--muted);margin-top:.3rem;
+}
+.media-icon{margin-right:.3rem;font-size:1rem}
 
 /* Composer */
-.composer{background:#202c33;padding:.55rem .85rem;display:flex;gap:.5rem;align-items:center;flex-shrink:0;position:relative}
-.composer-input{flex:1;background:#2a3942;border:none;color:#e9edef;padding:.55rem .9rem;border-radius:8px;font-size:.87rem;outline:none}
-.composer-input::placeholder{color:#8696a0}
-.btn-icon{background:#2a3942;border:none;width:36px;height:36px;border-radius:50%;color:#e9edef;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s}
-.btn-icon:hover{background:#374951}
-.btn-send{background:#00a884;border:none;width:38px;height:38px;border-radius:50%;color:#0b141a;font-size:1.05rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.btn-send:disabled{opacity:.45;cursor:not-allowed}
-input[type=file].file-input{display:none}
+.composer{
+  background:var(--surface2);padding:.6rem .85rem;
+  display:flex;gap:.5rem;align-items:center;flex-shrink:0;
+  border-top:1px solid var(--border);position:relative;
+}
+.composer-in{
+  flex:1;background:var(--surface3);border:none;color:var(--text);
+  padding:.58rem 1rem;border-radius:22px;font-size:.88rem;outline:none;
+}
+.composer-in::placeholder{color:var(--muted)}
+.ic-btn{
+  background:var(--surface3);border:none;width:36px;height:36px;
+  border-radius:50%;color:var(--text);font-size:.95rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:background .15s;
+}
+.ic-btn:hover{background:#374951}
+.send-btn{
+  background:var(--accent);border:none;width:38px;height:38px;
+  border-radius:50%;color:#fff;font-size:1rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:background .15s;
+}
+.send-btn:hover{background:var(--accent-dk)}
+.send-btn:disabled{opacity:.45;cursor:not-allowed}
+.file-in{display:none}
 
 /* Quick menu */
-.quick-menu{position:absolute;bottom:58px;left:0;right:0;background:#1f2c34;border-top:1px solid #2a3942;border-radius:10px 10px 0 0;max-height:240px;overflow-y:auto;z-index:20;box-shadow:0 -4px 16px rgba(0,0,0,.4)}
+.quick-menu{
+  position:absolute;bottom:62px;left:0;right:0;
+  background:#1f2c34;border-top:1px solid var(--surface3);
+  border-radius:14px 14px 0 0;max-height:250px;overflow-y:auto;
+  z-index:30;box-shadow:0 -6px 20px rgba(0,0,0,.4);
+}
 .quick-menu.hidden{display:none}
-.qm-header{padding:.45rem .9rem;font-size:.7rem;color:#8696a0;border-bottom:1px solid #2a3942;display:flex;justify-content:space-between}
-.qm-header span{cursor:pointer;color:#00a884}
-.quick-item{padding:.6rem .9rem;cursor:pointer;font-size:.85rem;border-bottom:1px solid #1a2329;transition:background .1s}
-.quick-item:hover{background:#2a3942}
+.qm-hdr{
+  padding:.45rem 1rem;font-size:.7rem;color:var(--muted);
+  border-bottom:1px solid var(--surface3);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.qm-hdr span{color:var(--accent);cursor:pointer;font-size:.72rem}
+.quick-item{padding:.6rem 1rem;cursor:pointer;font-size:.86rem;border-bottom:1px solid var(--border);transition:background .1s}
+.quick-item:hover{background:var(--surface3)}
 .quick-item:last-child{border-bottom:none}
 
-/* ══════════════════════════════════════════════════
-   VIEW: DASHBOARD
-══════════════════════════════════════════════════ */
-.dash-view{flex:1;overflow-y:auto;background:#0f0f0f;padding:0}
-.dash-inner{max-width:900px;margin:0 auto;padding:1.25rem 1rem}
-.dash-title{font-size:1rem;font-weight:600;margin-bottom:1.1rem;color:#e5e5e5}
-.stats{display:flex;gap:.85rem;flex-wrap:wrap;margin-bottom:1.5rem}
-.stat-card{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;padding:.9rem 1.2rem;flex:1;min-width:110px}
-.stat-card .lbl{font-size:.72rem;color:#888;margin-bottom:.25rem}
-.stat-card .val{font-size:1.5rem;font-weight:700}
+/* Sale MODAL (centralizado) */
+.sale-modal-bd{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.65);z-index:200;
+  align-items:center;justify-content:center;
+}
+.sale-modal-bd.open{display:flex}
+.sale-modal{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:1.6rem;
+  width:360px;max-width:95vw;
+  box-shadow:0 20px 50px rgba(0,0,0,.5);
+}
+.sale-modal h3{font-size:1rem;font-weight:600;margin-bottom:1.2rem}
+.sale-modal label{font-size:.78rem;color:var(--muted);display:block;margin-bottom:.25rem}
+.sale-modal input,
+.sale-modal select{
+  width:100%;background:var(--surface2);border:1px solid var(--surface3);
+  color:var(--text);padding:.55rem .75rem;border-radius:var(--radius-sm));
+  font-size:.9rem;outline:none;margin-bottom:.85rem;border-radius:8px;
+}
+.sale-modal input:focus,.sale-modal select:focus{border-color:var(--accent)}
+.sale-modal select option{background:var(--surface)}
+.sale-modal-acts{display:flex;gap:.65rem;justify-content:flex-end;margin-top:.3rem}
+.btn-cancel-s{background:none;border:1px solid var(--surface3);color:var(--muted);padding:.5rem 1rem;border-radius:7px;cursor:pointer}
+.btn-confirm-s{background:var(--accent);border:none;color:#fff;padding:.5rem 1.3rem;border-radius:7px;font-weight:700;cursor:pointer}
+.btn-confirm-s:disabled{opacity:.5;cursor:not-allowed}
+.btn-sale-open{background:var(--warn);color:#000;border:none;padding:.3rem .7rem;border-radius:7px;font-size:.76rem;font-weight:700;cursor:pointer;white-space:nowrap}
+.btn-sale-open:hover{opacity:.85}
+
+/* ════════════════════════════════════════════
+   DASHBOARD VIEW
+════════════════════════════════════════════ */
+.dash-view{flex:1;overflow-y:auto;background:#0d1117}
+.dash-inner{max-width:960px;margin:0 auto;padding:1.25rem 1.1rem}
+.dash-title{font-size:1.05rem;font-weight:700;margin-bottom:1.1rem;color:var(--text)}
+
+/* Period filter */
+.period-bar{display:flex;gap:.5rem;margin-bottom:1.1rem;flex-wrap:wrap;align-items:center}
+.period-btn{
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--muted);padding:.38rem .85rem;border-radius:20px;
+  cursor:pointer;font-size:.8rem;transition:all .15s;
+}
+.period-btn:hover{color:var(--text);border-color:var(--accent)}
+.period-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.date-range{display:none;gap:.4rem;align-items:center}
+.date-range.visible{display:flex}
+.date-range input{
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--text);padding:.35rem .6rem;border-radius:7px;
+  font-size:.78rem;outline:none;
+}
+.date-range input:focus{border-color:var(--accent)}
+colorscheme:dark;
+
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:.75rem;margin-bottom:1.2rem}
+.stat-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:.95rem 1.1rem;
+  box-shadow:0 2px 8px rgba(0,0,0,.2);
+}
+.stat-card .lbl{font-size:.71rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.35rem}
+.stat-card .val{font-size:1.45rem;font-weight:700}
 .stat-card.blue .val{color:#60a5fa}
 .stat-card.green .val{color:#4ade80}
-.stat-card.yellow .val{color:#fbbf24}
+.stat-card.yellow .val{color:var(--warn)}
+.stat-card.purple .val{color:#a78bfa}
 
-.dash-filters{display:flex;gap:.45rem;margin-bottom:.85rem}
-.df-btn{background:#1a1a1a;border:1px solid #2a2a2a;color:#aaa;padding:.35rem .85rem;border-radius:6px;cursor:pointer;font-size:.82rem;transition:all .15s}
-.df-btn.active{background:#25d366;border-color:#25d366;color:#000;font-weight:600}
+/* Organic / Paid split */
+.split-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.3rem}
+.split-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:.9rem 1.1rem;
+  box-shadow:0 2px 8px rgba(0,0,0,.2);
+}
+.split-card h4{font-size:.78rem;font-weight:600;margin-bottom:.5rem;display:flex;align-items:center;gap:.4rem}
+.split-card .big{font-size:1.2rem;font-weight:700;margin-bottom:.15rem}
+.split-card .sub{font-size:.75rem;color:var(--muted)}
+.pill{display:inline-block;padding:.1rem .45rem;border-radius:99px;font-size:.65rem;font-weight:600}
+.pill.organic{background:#1e3a5f;color:#60a5fa}
+.pill.paid{background:#2e1a47;color:#a78bfa}
 
-table{width:100%;border-collapse:collapse;font-size:.87rem}
-thead th{text-align:left;padding:.55rem .7rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:#666;border-bottom:1px solid #2a2a2a}
-tbody tr{border-bottom:1px solid #1e1e1e;transition:background .1s}
-tbody tr:hover{background:#1a1a1a}
-tbody td{padding:.7rem .7rem;vertical-align:middle}
-.badge{display:inline-block;padding:.18rem .55rem;border-radius:999px;font-size:.72rem;font-weight:600}
+/* Dash tabs */
+.dash-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:1rem}
+.dash-tab{
+  background:none;border:none;color:var(--muted);
+  padding:.55rem 1.2rem;cursor:pointer;font-size:.85rem;
+  border-bottom:2px solid transparent;transition:all .15s;
+}
+.dash-tab:hover{color:var(--text)}
+.dash-tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+
+/* Table */
+.tbl-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:.84rem}
+thead th{
+  background:var(--surface);text-align:left;
+  padding:.6rem .85rem;font-size:.71rem;
+  text-transform:uppercase;letter-spacing:.05em;color:var(--muted);
+  border-bottom:1px solid var(--border);
+}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:hover{background:var(--surface)}
+tbody td{padding:.7rem .85rem;vertical-align:middle}
+.badge{display:inline-block;padding:.2rem .6rem;border-radius:99px;font-size:.71rem;font-weight:600}
 .badge.lead,.badge.novo{background:#1e3a5f;color:#60a5fa}
 .badge.comprou{background:#14532d;color:#4ade80}
-.badge.em_atendimento{background:#422006;color:#fbbf24}
-.badge.nao_comprou{background:#450a0a;color:#f87171}
-.clid-chip{font-size:.7rem;font-family:monospace;background:#1e1e1e;padding:.12rem .35rem;border-radius:4px;color:#aaa;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block}
-.btn-venda-dash{background:#25d366;color:#000;border:none;padding:.3rem .8rem;border-radius:6px;cursor:pointer;font-weight:600;font-size:.79rem}
-.btn-venda-dash:hover{opacity:.85}
-.sent-lbl{color:#4ade80;font-size:.76rem}
+.badge.em_atendimento{background:#422006;color:var(--warn)}
+.badge.nao_comprou{background:#450a0a;color:var(--danger)}
+.clid{font-size:.68rem;font-family:monospace;background:var(--surface2);padding:.1rem .35rem;border-radius:4px;color:var(--muted);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block}
+.btn-reg{background:var(--accent);color:#fff;border:none;padding:.28rem .75rem;border-radius:6px;cursor:pointer;font-size:.77rem;font-weight:600}
+.btn-reg:hover{background:var(--accent-dk)}
+.dash-empty{padding:2rem;text-align:center;color:var(--muted);font-size:.88rem}
+.origin-tag{font-size:.7rem;padding:.1rem .4rem;border-radius:99px}
+.origin-tag.paid{background:#2e1a47;color:#a78bfa}
+.origin-tag.organic{background:#1e3a5f;color:#60a5fa}
 
-/* Modal dashboard */
-.modal-bd{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center}
-.modal-bd.open{display:flex}
-.modal{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:14px;padding:1.6rem;width:340px;max-width:95vw}
-.modal h3{font-size:.95rem;margin-bottom:1.1rem}
-.modal label{font-size:.8rem;color:#999;display:block;margin-bottom:.28rem}
-.modal input{width:100%;background:#111;border:1px solid #333;color:#e5e5e5;padding:.55rem .7rem;border-radius:8px;font-size:.92rem;margin-bottom:.9rem;outline:none}
-.modal input:focus{border-color:#25d366}
-.modal-acts{display:flex;gap:.7rem;justify-content:flex-end}
-.btn-cancel-m{background:transparent;border:1px solid #333;color:#aaa;padding:.45rem 1rem;border-radius:7px;cursor:pointer}
-.btn-confirm-m{background:#25d366;border:none;color:#000;padding:.45rem 1.2rem;border-radius:7px;cursor:pointer;font-weight:700}
-.btn-confirm-m:disabled{opacity:.5;cursor:not-allowed}
+/* Dashboard sale modal */
+.dsale-bd{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:300;align-items:center;justify-content:center}
+.dsale-bd.open{display:flex}
+.dsale-modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.6rem;width:360px;max-width:95vw;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.dsale-modal h3{font-size:1rem;font-weight:600;margin-bottom:1.2rem}
+.dsale-modal label{font-size:.78rem;color:var(--muted);display:block;margin-bottom:.25rem}
+.dsale-modal input,.dsale-modal select{width:100%;background:var(--surface2);border:1px solid var(--surface3);color:var(--text);padding:.55rem .75rem;border-radius:8px;font-size:.9rem;outline:none;margin-bottom:.85rem}
+.dsale-modal input:focus,.dsale-modal select:focus{border-color:var(--accent)}
+.dsale-modal select option{background:var(--surface)}
+.dsale-acts{display:flex;gap:.65rem;justify-content:flex-end;margin-top:.3rem}
 
-/* ══════════════════════════════════════════════════
-   VIEW: CONFIG (respostas rápidas)
-══════════════════════════════════════════════════ */
-.cfg-view{flex:1;overflow-y:auto;background:#0b141a;padding:1.25rem 1rem}
+/* ════════════════════════════════════════════
+   CONFIG VIEW
+════════════════════════════════════════════ */
+.cfg-view{flex:1;overflow-y:auto;background:var(--bg);padding:1.25rem 1rem}
 .cfg-inner{max-width:660px;margin:0 auto}
-.cfg-title{font-size:.95rem;font-weight:600;margin-bottom:1.1rem}
-.add-box{background:#111b21;border:1px solid #222d34;border-radius:12px;padding:1.1rem;margin-bottom:1.3rem}
-.add-box h4{font-size:.82rem;color:#8696a0;margin-bottom:.65rem}
-.add-box textarea{width:100%;background:#0b141a;border:1px solid #2a3942;color:#e9edef;padding:.6rem .8rem;border-radius:8px;font-size:.88rem;resize:vertical;min-height:72px;outline:none;font-family:inherit}
-.add-box textarea:focus{border-color:#00a884}
-.add-box button{margin-top:.5rem;background:#00a884;color:#000;border:none;padding:.45rem 1.1rem;border-radius:7px;font-weight:700;font-size:.85rem;cursor:pointer}
+.cfg-title{font-size:.95rem;font-weight:600;margin-bottom:1rem}
+.add-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.1rem;margin-bottom:1.2rem;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.add-box h4{font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.65rem}
+.add-box textarea{width:100%;background:var(--bg);border:1px solid var(--surface3);color:var(--text);padding:.6rem .8rem;border-radius:8px;font-size:.88rem;resize:vertical;min-height:68px;outline:none;font-family:inherit}
+.add-box textarea:focus{border-color:var(--accent)}
+.add-box button{margin-top:.5rem;background:var(--accent);color:#fff;border:none;padding:.45rem 1.1rem;border-radius:7px;font-weight:700;font-size:.85rem;cursor:pointer}
 .add-box button:disabled{opacity:.5;cursor:not-allowed}
-.replies-list{display:flex;flex-direction:column;gap:.65rem}
-.reply-card{background:#111b21;border:1px solid #222d34;border-radius:10px;padding:.9rem 1rem}
-.reply-card.editing{border-color:#00a884}
-.reply-body-txt{font-size:.88rem;line-height:1.42;white-space:pre-wrap;word-break:break-word}
-.reply-ta{width:100%;background:#0b141a;border:1px solid #2a3942;color:#e9edef;padding:.55rem .75rem;border-radius:7px;font-size:.86rem;resize:vertical;min-height:64px;outline:none;font-family:inherit}
-.reply-ta:focus{border-color:#00a884}
-.reply-acts{display:flex;gap:.45rem;margin-top:.6rem;justify-content:flex-end}
-.btn-edit-r{background:#2a3942;border:none;color:#e9edef;padding:.3rem .75rem;border-radius:6px;font-size:.77rem;cursor:pointer}
-.btn-save-r{background:#00a884;border:none;color:#000;padding:.3rem .75rem;border-radius:6px;font-size:.77rem;font-weight:700;cursor:pointer}
-.btn-del-r{background:none;border:1px solid #f87171;color:#f87171;padding:.3rem .7rem;border-radius:6px;font-size:.77rem;cursor:pointer}
-.btn-del-r:hover{background:#f87171;color:#000}
-.btn-cancel-r{background:none;border:1px solid #2a3942;color:#8696a0;padding:.3rem .65rem;border-radius:6px;font-size:.77rem;cursor:pointer}
+.replies-list{display:flex;flex-direction:column;gap:.6rem}
+.rc{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.9rem 1rem;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.rc.editing{border-color:var(--accent)}
+.rc-body{font-size:.88rem;line-height:1.42;white-space:pre-wrap;word-break:break-word}
+.rc-ta{width:100%;background:var(--bg);border:1px solid var(--surface3);color:var(--text);padding:.55rem .75rem;border-radius:7px;font-size:.86rem;resize:vertical;min-height:64px;outline:none;font-family:inherit}
+.rc-ta:focus{border-color:var(--accent)}
+.rc-acts{display:flex;gap:.4rem;margin-top:.6rem;justify-content:flex-end}
+.btn-edit-r{background:var(--surface3);border:none;color:var(--text);padding:.3rem .75rem;border-radius:6px;font-size:.76rem;cursor:pointer}
+.btn-save-r{background:var(--accent);border:none;color:#fff;padding:.3rem .75rem;border-radius:6px;font-size:.76rem;font-weight:700;cursor:pointer}
+.btn-del-r{background:none;border:1px solid var(--danger);color:var(--danger);padding:.3rem .7rem;border-radius:6px;font-size:.76rem;cursor:pointer}
+.btn-del-r:hover{background:var(--danger);color:#000}
+.btn-cancel-r{background:none;border:1px solid var(--surface3);color:var(--muted);padding:.3rem .65rem;border-radius:6px;font-size:.76rem;cursor:pointer}
 
 /* ── Toast ── */
-.toast{position:fixed;top:1rem;right:1rem;background:#00a884;color:#000;padding:.6rem 1rem;border-radius:8px;font-size:.83rem;font-weight:600;z-index:999;opacity:0;transform:translateY(-8px);transition:all .22s;pointer-events:none}
+.toast{position:fixed;top:1rem;right:1rem;padding:.6rem 1rem;border-radius:9px;font-size:.83rem;font-weight:600;z-index:9999;opacity:0;transform:translateY(-8px);transition:all .22s;pointer-events:none;max-width:280px}
 .toast.show{opacity:1;transform:translateY(0)}
+
+/* ── Empty ── */
+.empty-state{padding:2rem;text-align:center;color:var(--muted);font-size:.87rem}
 
 /* ── Mobile ── */
 @media(max-width:768px){
@@ -213,135 +413,235 @@ tbody td{padding:.7rem .7rem;vertical-align:middle}
   .crm-layout.chat-open .sidebar{display:none}
   .crm-layout.chat-open .chat-area{display:flex}
   .back-btn{display:flex!important}
-  .bubble{max-width:82%}
-  .side-nav{width:48px}
+  .bubble{max-width:84%}
+  .split-grid{grid-template-columns:1fr}
+  .side-nav{width:46px}
 }
 </style>
 </head>
 <body>
 
-<div class="toast" id="toast"></div>
-
-<!-- Modal venda (dashboard) -->
-<div class="modal-bd" id="dash-modal">
-  <div class="modal">
-    <h3>✅ Registrar Venda</h3>
-    <label>Nome do cliente (opcional)</label>
-    <input type="text" id="dm-nome" placeholder="Ex: João Silva"/>
-    <label>Valor da venda (R$)</label>
-    <input type="number" id="dm-valor" placeholder="Ex: 297.00" step="0.01" min="0"/>
-    <div class="modal-acts">
-      <button class="btn-cancel-m" onclick="closeDashModal()">Cancelar</button>
-      <button class="btn-confirm-m" id="dm-confirm" onclick="confirmDashSale()">Confirmar</button>
+<!-- Sale modal (CRM) -->
+<div class="sale-modal-bd" id="sale-modal-bd">
+  <div class="sale-modal">
+    <h3>💰 Registrar Venda</h3>
+    <label>Nome do cliente</label>
+    <input type="text" id="sm-nome" placeholder="Ex: Maria Silva"/>
+    <label>Valor (R$)</label>
+    <input type="number" id="sm-valor" placeholder="Ex: 297,00" step="0.01" min="0"/>
+    <label>Tipo de leitura (opcional)</label>
+    <select id="sm-tipo">
+      <option value="">— Selecione —</option>
+      <option>Tiragem Simples</option>
+      <option>Tiragem do Amor</option>
+      <option>Tiragem Completa</option>
+      <option>Mapa Astral</option>
+      <option>Baralho Cigano</option>
+      <option>Mandala</option>
+      <option>Outro</option>
+    </select>
+    <div class="sale-modal-acts">
+      <button class="btn-cancel-s" onclick="closeSaleModal()">Cancelar</button>
+      <button class="btn-confirm-s" id="sm-confirm" onclick="confirmSaleModal()">Confirmar Venda</button>
     </div>
   </div>
 </div>
 
-<div class="shell">
+<!-- Dashboard sale modal -->
+<div class="dsale-bd" id="dsale-bd">
+  <div class="dsale-modal">
+    <h3>💰 Registrar Venda</h3>
+    <label>Nome do cliente</label>
+    <input type="text" id="ds-nome" placeholder="Ex: Maria Silva"/>
+    <label>Valor (R$)</label>
+    <input type="number" id="ds-valor" placeholder="Ex: 297,00" step="0.01" min="0"/>
+    <label>Tipo de leitura (opcional)</label>
+    <select id="ds-tipo">
+      <option value="">— Selecione —</option>
+      <option>Tiragem Simples</option>
+      <option>Tiragem do Amor</option>
+      <option>Tiragem Completa</option>
+      <option>Mapa Astral</option>
+      <option>Baralho Cigano</option>
+      <option>Mandala</option>
+      <option>Outro</option>
+    </select>
+    <div class="dsale-acts">
+      <button class="btn-cancel-s" onclick="closeDsModal()">Cancelar</button>
+      <button class="btn-confirm-s" id="ds-confirm" onclick="confirmDsModal()">Confirmar Venda</button>
+    </div>
+  </div>
+</div>
 
-  <!-- ── Nav lateral ── -->
+<div class="toast" id="toast"></div>
+
+<div class="shell">
+  <!-- Side nav -->
   <nav class="side-nav">
-    <button class="nav-btn active" data-view="crm" onclick="switchView('crm')" title="Atendimento">💬</button>
-    <button class="nav-btn" data-view="dashboard" onclick="switchView('dashboard')" title="Dashboard">📊</button>
-    <button class="nav-btn" data-view="config" onclick="switchView('config')" title="Respostas Rápidas">⚡</button>
+    <button class="nav-btn active" data-view="crm" onclick="switchView('crm')">
+      💬<span class="nav-tooltip">Atendimento</span>
+    </button>
+    <button class="nav-btn" data-view="dashboard" onclick="switchView('dashboard')">
+      📊<span class="nav-tooltip">Dashboard</span>
+    </button>
+    <button class="nav-btn" data-view="config" onclick="switchView('config')">
+      ⚡<span class="nav-tooltip">Respostas Rápidas</span>
+    </button>
   </nav>
 
-  <!-- ══ VIEW: CRM ══ -->
+  <!-- ══ CRM ══ -->
   <div class="view active" id="view-crm">
     <div class="crm-layout" id="crm-layout">
-
       <div class="sidebar">
-        <div class="sidebar-header">
-          <h2>💬 Atendimento</h2>
-          <input class="search-input" id="search" placeholder="Buscar por nome ou número..."/>
+        <div class="sidebar-hdr">
+          <h2>Atendimento</h2>
+          <div class="search-wrap">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input class="search-in" id="search" placeholder="Buscar por nome ou número..."/>
+          </div>
         </div>
-        <div class="status-filters">
-          <button class="sf-btn active" data-filter="todos">Todos<span class="sf-badge" id="cnt-todos">0</span></button>
-          <button class="sf-btn" data-filter="novo,lead">Novos<span class="sf-badge" id="cnt-novo">0</span></button>
-          <button class="sf-btn" data-filter="em_atendimento">Atend.<span class="sf-badge" id="cnt-em">0</span></button>
-          <button class="sf-btn" data-filter="comprou">Comprou<span class="sf-badge" id="cnt-buy">0</span></button>
+        <div class="sf-tabs">
+          <button class="sf-tab active" data-filter="todos">Todos<span class="sf-badge" id="cnt-todos">0</span></button>
+          <button class="sf-tab" data-filter="novo,lead">Novos<span class="sf-badge" id="cnt-novo">0</span></button>
+          <button class="sf-tab" data-filter="em_atendimento">Atend.<span class="sf-badge" id="cnt-em">0</span></button>
+          <button class="sf-tab" data-filter="comprou">Comprou<span class="sf-badge" id="cnt-buy">0</span></button>
         </div>
-        <div class="conv-list" id="conv-list"><div class="empty-list">Carregando...</div></div>
+        <div class="conv-list" id="conv-list"><div class="empty-state">Carregando...</div></div>
       </div>
 
       <div class="chat-area" id="chat-area">
-        <div class="chat-empty"><div style="font-size:2.5rem">💬</div><div>Selecione uma conversa</div></div>
+        <div class="chat-empty">
+          <div style="font-size:3rem;margin-bottom:.3rem">💬</div>
+          <div style="font-weight:600">Selecione uma conversa</div>
+          <div style="font-size:.83rem;margin-top:.25rem">Escolha um contato na lista ao lado</div>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- ══ VIEW: DASHBOARD ══ -->
+  <!-- ══ DASHBOARD ══ -->
   <div class="view" id="view-dashboard">
     <div class="dash-view">
       <div class="dash-inner">
         <div class="dash-title">📊 Dashboard de Vendas</div>
-        <div class="stats">
+
+        <!-- Period filter -->
+        <div class="period-bar">
+          <button class="period-btn active" data-period="todos">Tudo</button>
+          <button class="period-btn" data-period="hoje">Hoje</button>
+          <button class="period-btn" data-period="semana">Esta semana</button>
+          <button class="period-btn" data-period="mes">Este mês</button>
+          <button class="period-btn" data-period="custom">Personalizado</button>
+          <div class="date-range" id="date-range">
+            <input type="date" id="dt-from" onchange="renderDash()"/>
+            <span style="color:var(--muted);font-size:.8rem">até</span>
+            <input type="date" id="dt-to" onchange="renderDash()"/>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
           <div class="stat-card blue"><div class="lbl">Total Leads</div><div class="val" id="d-total">—</div></div>
           <div class="stat-card green"><div class="lbl">Vendas</div><div class="val" id="d-vendas">—</div></div>
-          <div class="stat-card yellow"><div class="lbl">Receita</div><div class="val" id="d-receita">—</div></div>
-          <div class="stat-card green"><div class="lbl">Conversão</div><div class="val" id="d-conv">—</div></div>
+          <div class="stat-card yellow"><div class="lbl">Receita Total</div><div class="val" id="d-receita">—</div></div>
+          <div class="stat-card purple"><div class="lbl">Conversão</div><div class="val" id="d-conv">—</div></div>
         </div>
-        <div class="dash-filters">
-          <button class="df-btn active" data-dfilter="todos">Todos</button>
-          <button class="df-btn" data-dfilter="lead,novo">Leads</button>
-          <button class="df-btn" data-dfilter="comprou">Compras</button>
+
+        <!-- Organic vs Paid split -->
+        <div class="split-grid">
+          <div class="split-card">
+            <h4><span class="pill organic">Orgânico</span> Sem anúncio</h4>
+            <div class="big" id="d-org-receita">R$ 0,00</div>
+            <div class="sub" id="d-org-count">0 vendas · 0 leads</div>
+          </div>
+          <div class="split-card">
+            <h4><span class="pill paid">Pago</span> Via anúncio</h4>
+            <div class="big" id="d-paid-receita">R$ 0,00</div>
+            <div class="sub" id="d-paid-count">0 vendas · 0 leads</div>
+          </div>
         </div>
-        <table>
-          <thead><tr><th>Telefone</th><th>Nome</th><th>Status</th><th>CLID</th><th>Valor</th><th>Data</th><th>Ação</th></tr></thead>
-          <tbody id="dash-tbody"><tr><td colspan="7" class="empty-list">Carregando...</td></tr></tbody>
-        </table>
+
+        <!-- Tabs -->
+        <div class="dash-tabs">
+          <button class="dash-tab active" data-dtab="todos" onclick="setDTab(this,'todos')">Todos</button>
+          <button class="dash-tab" data-dtab="leads" onclick="setDTab(this,'leads')">Leads</button>
+          <button class="dash-tab" data-dtab="compras" onclick="setDTab(this,'compras')">Compras</button>
+        </div>
+
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr>
+              <th>Telefone</th><th>Nome</th><th>Status</th>
+              <th>Origem</th><th>Valor</th><th>Data</th><th>Ação</th>
+            </tr></thead>
+            <tbody id="dash-tbody"><tr><td colspan="7" class="dash-empty">Carregando...</td></tr></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- ══ VIEW: CONFIG ══ -->
+  <!-- ══ CONFIG ══ -->
   <div class="view" id="view-config">
     <div class="cfg-view">
       <div class="cfg-inner">
         <div class="cfg-title">⚡ Respostas Rápidas</div>
         <div class="add-box">
-          <h4>NOVA RESPOSTA</h4>
-          <textarea id="cfg-new-body" placeholder="Digite o texto..."></textarea>
+          <h4>Nova resposta</h4>
+          <textarea id="cfg-ta" placeholder="Digite o texto da resposta..."></textarea>
           <button id="cfg-add-btn" onclick="cfgAdd()">+ Adicionar</button>
         </div>
-        <div class="replies-list" id="replies-list"><div class="empty-list">Carregando...</div></div>
+        <div class="replies-list" id="replies-list"><div class="empty-state">Carregando...</div></div>
       </div>
     </div>
   </div>
-
-</div><!-- .shell -->
+</div>
 
 <script>
-// ══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════
 // GLOBALS
-// ══════════════════════════════════════════════════════
-let conversations = [], currentPhone = null, currentLead = null;
-let currentFilter = 'todos', dashFilter = 'todos';
-let quickReplies = [], dashLeads = [];
-let lastMsgTs = {};   // phone → last msg timestamp (ms)
-let saleBarOpen = false;
-let editingName = false;
-let _audioCtx = null;
+// ═══════════════════════════════════════════
+let conversations=[], currentPhone=null, currentLead=null;
+let crmFilter='todos', quickReplies=[], dashLeads=[], dashPeriod='todos', dashTab='todos';
+let lastMsgTs={};
+let editingName=false;
+let salePendingLeadId=null, dsPendingLeadId=null;
+let _audioCtx=null;
 
-// ══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════
 // UTILS
-// ══════════════════════════════════════════════════════
-function esc(s){ const d=document.createElement('div');d.textContent=s;return d.innerHTML }
-function timeAgo(iso){
-  if(!iso)return '';
+// ═══════════════════════════════════════════
+function esc(s){const d=document.createElement('div');d.textContent=s??'';return d.innerHTML}
+function fmt(iso){
+  if(!iso)return'';
   const d=new Date(iso),now=new Date();
-  if(d.toDateString()===now.toDateString()) return d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  if(d.toDateString()===now.toDateString())return d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
   return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
 }
-function initials(name,phone){
-  if(name)return name.trim().slice(0,2).toUpperCase();
-  return (phone||'??').slice(-2);
+function fmtDate(iso){
+  const d=new Date(iso),now=new Date();
+  const yst=new Date(now);yst.setDate(now.getDate()-1);
+  if(d.toDateString()===now.toDateString())return'Hoje';
+  if(d.toDateString()===yst.toDateString())return'Ontem';
+  return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
 }
-function toast(msg,color='#00a884'){
+function fmtBRL(v){return parseFloat(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+function initials(name,phone){
+  if(name&&name.trim())return name.trim().split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  return(phone||'??').slice(-2);
+}
+const AV_COLORS=['#6366f1','#8b5cf6','#ec4899','#f59e0b','#10b981','#3b82f6','#ef4444','#14b8a6','#f97316'];
+function avatarColor(str){let h=0;for(const c of(str||''))h=c.charCodeAt(0)+((h<<5)-h);return AV_COLORS[Math.abs(h)%AV_COLORS.length]}
+function avatar(name,phone,size=44){
+  const bg=avatarColor(phone||name||'');
+  const ini=esc(initials(name,phone));
+  return`<div class="avatar" style="width:${size}px;height:${size}px;background:${bg};font-size:${size*.38}px">${ini}`;
+}
+function toast(msg,color='var(--accent)'){
   const t=document.getElementById('toast');
-  t.textContent=msg; t.style.background=color;
-  t.classList.add('show');
-  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),3000);
+  t.textContent=msg;t.style.background=color;
+  t.classList.add('show');clearTimeout(t._t);
+  t._t=setTimeout(()=>t.classList.remove('show'),3200);
 }
 function beep(){
   try{
@@ -349,389 +649,413 @@ function beep(){
     const o=_audioCtx.createOscillator(),g=_audioCtx.createGain();
     o.connect(g);g.connect(_audioCtx.destination);
     o.frequency.value=880;o.type='sine';
-    g.gain.setValueAtTime(.12,_audioCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(.001,_audioCtx.currentTime+.25);
-    o.start();o.stop(_audioCtx.currentTime+.25);
+    g.gain.setValueAtTime(.1,_audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,_audioCtx.currentTime+.22);
+    o.start();o.stop(_audioCtx.currentTime+.22);
   }catch{}
 }
 
-// ══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════
 // NAV
-// ══════════════════════════════════════════════════════
-function switchView(view){
-  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+// ═══════════════════════════════════════════
+function switchView(v){
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('view-'+view).classList.add('active');
-  document.querySelector(`.nav-btn[data-view="${view}"]`).classList.add('active');
-  if(view==='dashboard') loadDashboard();
-  if(view==='config') cfgLoad();
+  document.getElementById('view-'+v).classList.add('active');
+  document.querySelector(`.nav-btn[data-view="${v}"]`).classList.add('active');
+  if(v==='dashboard')loadDashboard();
+  if(v==='config')cfgLoad();
 }
 
-// ══════════════════════════════════════════════════════
-// CRM — Conversas
-// ══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════
+// CRM — Conversations
+// ═══════════════════════════════════════════
 async function loadConversations(silent=false){
-  const res=await fetch('/api/conversations');
-  const fresh=await res.json();
+  const r=await fetch('/api/conversations');
+  const fresh=await r.json();
   if(!silent){
     fresh.forEach(c=>{
       const prev=lastMsgTs[c.phone];
       const curr=c.lastMessage?new Date(c.lastMessage.timestamp).getTime():0;
-      if(prev!==undefined && curr>prev && c.phone!==currentPhone){
-        toast(`💬 Nova msg de ${c.nome||c.phone}`); beep();
-      }
+      if(prev!==undefined&&curr>prev&&c.phone!==currentPhone){toast(`💬 Nova msg de ${c.nome||c.phone}`);beep();}
       lastMsgTs[c.phone]=curr;
     });
   } else {
-    fresh.forEach(c=>{ lastMsgTs[c.phone]=c.lastMessage?new Date(c.lastMessage.timestamp).getTime():0; });
+    fresh.forEach(c=>{lastMsgTs[c.phone]=c.lastMessage?new Date(c.lastMessage.timestamp).getTime():0;});
   }
   conversations=fresh;
-  updateCounts(); renderConvList();
+  updateCounts();renderConvList();
 }
-
+function sqVal(){return(document.getElementById('search').value||'').toLowerCase().trim()}
 function updateCounts(){
-  const q=searchVal();
+  const q=sqVal();
   const vis=conversations.filter(c=>(c.nome||'').toLowerCase().includes(q)||c.phone.includes(q));
   document.getElementById('cnt-todos').textContent=vis.length;
   document.getElementById('cnt-novo').textContent=vis.filter(c=>c.status==='novo'||c.status==='lead').length;
   document.getElementById('cnt-em').textContent=vis.filter(c=>c.status==='em_atendimento').length;
   document.getElementById('cnt-buy').textContent=vis.filter(c=>c.status==='comprou').length;
 }
-
-function searchVal(){ return (document.getElementById('search').value||'').toLowerCase().trim(); }
-
-function filterConv(list){
-  if(currentFilter==='todos')return list;
-  const vals=currentFilter.split(',');
+function filterConvs(list){
+  if(crmFilter==='todos')return list;
+  const vals=crmFilter.split(',');
   return list.filter(c=>vals.includes(c.status));
 }
-
 function renderConvList(){
-  const q=searchVal();
-  const list=document.getElementById('conv-list');
-  const filtered=filterConv(
-    conversations.filter(c=>(c.nome||'').toLowerCase().includes(q)||c.phone.includes(q))
-  );
-  if(!filtered.length){list.innerHTML='<div class="empty-list">Nenhuma conversa</div>';return;}
-  list.innerHTML=filtered.map(c=>{
+  const q=sqVal();
+  const el=document.getElementById('conv-list');
+  const filtered=filterConvs(conversations.filter(c=>(c.nome||'').toLowerCase().includes(q)||c.phone.includes(q)));
+  if(!filtered.length){el.innerHTML='<div class="empty-state">Nenhuma conversa</div>';return;}
+  el.innerHTML=filtered.map(c=>{
     const sk=c.status||'novo';
-    const preview=c.lastMessage?(c.lastMessage.direction==='out'?'Você: ':'')+esc(c.lastMessage.body||''):'Sem mensagens';
     const isNew=c.phone!==currentPhone&&c.lastMessage?.direction==='in'&&(sk==='novo'||sk==='lead');
-    return `<div class="conv-item${c.phone===currentPhone?' active':''}" onclick="openConv('${c.phone}')">
-      <div class="avatar">${esc(initials(c.nome,c.phone))}${isNew?'<div class="new-dot"></div>':''}</div>
+    const av=avatar(c.nome,c.phone,42)+(isNew?'<div class="new-dot"></div>':'')+'</div>';
+    const preview=c.lastMessage?(c.lastMessage.direction==='out'?'Você: ':'')+esc(c.lastMessage.body||''):'Sem mensagens';
+    return`<div class="conv-item${c.phone===currentPhone?' active':''}" onclick="openConv('${esc(c.phone)}')">
+      ${av}
       <div class="conv-info">
-        <div class="conv-top"><span class="conv-name">${esc(c.nome||c.phone)}</span><span class="conv-time">${timeAgo(c.last_message_at||c.created_at)}</span></div>
+        <div class="conv-top"><span class="conv-name">${esc(c.nome||c.phone)}</span><span class="conv-time">${fmt(c.last_message_at||c.created_at)}</span></div>
         <div class="conv-bottom"><span class="conv-preview">${preview}</span><span class="sdot ${sk}"></span></div>
       </div></div>`;
   }).join('');
 }
+document.querySelectorAll('.sf-tab').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.sf-tab').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');crmFilter=b.dataset.filter;renderConvList();
+}));
+document.getElementById('search').addEventListener('input',()=>{updateCounts();renderConvList();});
 
-// ══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════
 // CRM — Chat
-// ══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════
 async function openConv(phone){
-  currentPhone=phone; currentLead=conversations.find(c=>c.phone===phone);
-  saleBarOpen=false; editingName=false;
+  currentPhone=phone;currentLead=conversations.find(c=>c.phone===phone);
+  editingName=false;
   document.getElementById('crm-layout').classList.add('chat-open');
   renderConvList();
   await renderChatArea();
 }
-
 async function renderChatArea(){
   const ca=document.getElementById('chat-area');
   const sk=currentLead?.status||'novo';
-  const purchaseInfo=getPurchaseInfo();
+  const av=avatar(currentLead?.nome,currentPhone,44)+'</div>';
+  const purchInfo=getPurchInfo();
 
   ca.innerHTML=`
     <div class="chat-hdr">
-      <div class="chat-hdr-row1">
+      <div class="chat-hdr-row">
         <button class="back-btn" onclick="closeChat()">←</button>
-        <div class="avatar">${esc(initials(currentLead?.nome,currentPhone))}</div>
-        <div class="name-edit-wrap" id="name-wrap">
-          <span class="name-display" id="name-display" onclick="startNameEdit()" title="Clique para editar">${esc(currentLead?.nome||'Sem nome')}</span>
-          <input class="name-input" id="name-input" style="display:none" value="${esc(currentLead?.nome||'')}" placeholder="Nome do cliente"/>
+        ${av}
+        <div class="chat-hdr-info">
+          <div class="name-edit-wrap">
+            <span class="name-display" id="name-disp" onclick="startNameEdit()" title="Clique para editar o nome">${esc(currentLead?.nome||'Sem nome')}</span>
+            <input class="name-input" id="name-inp" style="display:none" value="${esc(currentLead?.nome||'')}" placeholder="Nome do cliente"/>
+          </div>
+          <div class="chat-sub">${esc(currentPhone)}${purchInfo}</div>
         </div>
         <div class="chat-hdr-right">
-          <select class="status-select" id="status-sel">
+          <select class="status-sel" id="status-sel">
             <option value="novo" ${sk==='novo'||sk==='lead'?'selected':''}>Novo</option>
             <option value="em_atendimento" ${sk==='em_atendimento'?'selected':''}>Em atend.</option>
             <option value="comprou" ${sk==='comprou'?'selected':''}>Comprou</option>
             <option value="nao_comprou" ${sk==='nao_comprou'?'selected':''}>Não comprou</option>
           </select>
-          <button class="btn-sale" onclick="toggleSaleBar()">💰 Venda</button>
+          <button class="btn-sale-open" onclick="openSaleModal()">💰 Venda</button>
         </div>
       </div>
-      <div class="chat-hdr-sub">${currentPhone}${purchaseInfo}</div>
     </div>
-    <div id="sale-slot"></div>
-    <div class="messages" id="messages"><div class="empty-list">Carregando...</div></div>
+    <div class="messages" id="messages"><div class="empty-state">Carregando...</div></div>
     <div class="quick-menu hidden" id="quick-menu">
-      <div class="qm-header"><span>⚡ Respostas rápidas</span><span onclick="switchView('config')">Editar</span></div>
+      <div class="qm-hdr">⚡ Respostas rápidas <span onclick="switchView('config')">Editar</span></div>
       <div id="quick-items"></div>
     </div>
     <div class="composer">
-      <input type="file" class="file-input" id="img-input" accept="image/*" onchange="sendMedia(this,'image')"/>
-      <input type="file" class="file-input" id="aud-input" accept="audio/*" onchange="sendMedia(this,'audio')"/>
-      <button class="btn-icon" onclick="document.getElementById('img-input').click()" title="Enviar imagem">📎</button>
-      <button class="btn-icon" onclick="document.getElementById('aud-input').click()" title="Enviar áudio">🎵</button>
-      <button class="btn-icon" id="btn-quick" onclick="toggleQuickMenu()" title="Respostas rápidas">⚡</button>
-      <input class="composer-input" id="msg-input" placeholder="Digite uma mensagem..."/>
-      <button class="btn-send" id="btn-send">➤</button>
+      <input type="file" class="file-in" id="img-in" accept="image/*" onchange="sendMedia(this,'image')"/>
+      <input type="file" class="file-in" id="aud-in" accept="audio/*" onchange="sendMedia(this,'audio')"/>
+      <button class="ic-btn" onclick="document.getElementById('img-in').click()" title="Imagem">📎</button>
+      <button class="ic-btn" onclick="document.getElementById('aud-in').click()" title="Áudio">🎵</button>
+      <button class="ic-btn" id="qbtn" onclick="toggleQM()" title="Respostas rápidas">⚡</button>
+      <input class="composer-in" id="msg-in" placeholder="Digite uma mensagem..."/>
+      <button class="send-btn" id="sbtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </button>
     </div>`;
 
-  document.getElementById('status-sel').onchange=e=>updateStatus(currentLead.id,e.target.value);
-  document.getElementById('btn-send').onclick=sendMsg;
-  document.getElementById('msg-input').onkeydown=e=>{ if(e.key==='Enter'&&!e.shiftKey)sendMsg(); };
-  document.getElementById('name-input').onblur=saveNameEdit;
-  document.getElementById('name-input').onkeydown=e=>{ if(e.key==='Enter')saveNameEdit(); if(e.key==='Escape')cancelNameEdit(); };
+  document.getElementById('status-sel').onchange=e=>updStatus(currentLead.id,e.target.value);
+  document.getElementById('sbtn').onclick=sendMsg;
+  document.getElementById('msg-in').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey)sendMsg();};
+  document.getElementById('name-inp').onblur=saveNameEdit;
+  document.getElementById('name-inp').onkeydown=e=>{if(e.key==='Enter')saveNameEdit();if(e.key==='Escape')cancelNameEdit();};
 
-  renderQuickItems();
+  renderQItems();
   await loadMessages(true);
 }
-
-function getPurchaseInfo(){
-  if(!currentLead)return '';
-  if(currentLead.status==='comprou'&&currentLead.valor){
-    const val=parseFloat(currentLead.valor).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-    return ` · <span style="color:#4ade80">1 compra — ${val}</span>`;
-  }
-  return '';
+function getPurchInfo(){
+  if(!currentLead||currentLead.status!=='comprou'||!currentLead.valor)return'';
+  return` <span class="purchase-badge">1 compra · ${fmtBRL(currentLead.valor)}</span>`;
+}
+function closeChat(){
+  document.getElementById('crm-layout').classList.remove('chat-open');
+  currentPhone=null;currentLead=null;
 }
 
-// Nome editável
+// Name edit
 function startNameEdit(){
-  if(editingName)return;
-  editingName=true;
-  document.getElementById('name-display').style.display='none';
-  const inp=document.getElementById('name-input');
-  inp.style.display='inline-block'; inp.focus(); inp.select();
+  if(editingName)return;editingName=true;
+  document.getElementById('name-disp').style.display='none';
+  const i=document.getElementById('name-inp');i.style.display='';i.focus();i.select();
 }
 async function saveNameEdit(){
-  if(!editingName)return;
-  editingName=false;
-  const nome=document.getElementById('name-input').value.trim();
-  document.getElementById('name-display').textContent=nome||'Sem nome';
-  document.getElementById('name-display').style.display='';
-  document.getElementById('name-input').style.display='none';
+  if(!editingName)return;editingName=false;
+  const nome=document.getElementById('name-inp')?.value.trim();
+  const disp=document.getElementById('name-disp');
+  if(disp){disp.textContent=nome||'Sem nome';disp.style.display='';}
+  document.getElementById('name-inp').style.display='none';
   await fetch(`/api/leads/${currentLead.id}/nome`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome})});
   await loadConversations(false);
   currentLead=conversations.find(c=>c.phone===currentPhone);
 }
 function cancelNameEdit(){
   editingName=false;
-  document.getElementById('name-display').style.display='';
-  document.getElementById('name-input').style.display='none';
+  const d=document.getElementById('name-disp');if(d)d.style.display='';
+  const i=document.getElementById('name-inp');if(i)i.style.display='none';
 }
 
-// Mensagens
+// Messages
 async function loadMessages(scrollForce=false){
   if(!currentPhone)return;
-  const res=await fetch(`/api/messages/${currentPhone}`);
-  const msgs=await res.json();
-  const c=document.getElementById('messages');
-  if(!c)return;
-  if(!msgs.length){c.innerHTML='<div class="empty-list">Nenhuma mensagem ainda</div>';return;}
-  const atBottom=c.scrollHeight-c.scrollTop-c.clientHeight<80;
+  const r=await fetch(`/api/messages/${currentPhone}`);
+  const msgs=await r.json();
+  const c=document.getElementById('messages');if(!c)return;
+  if(!msgs.length){c.innerHTML='<div class="empty-state">Nenhuma mensagem ainda</div>';return;}
+  const atBottom=c.scrollHeight-c.scrollTop-c.clientHeight<100;
+  let lastDate=null;
   c.innerHTML=msgs.map(m=>{
+    const mDate=fmtDate(m.timestamp);
+    const sep=mDate!==lastDate?`<div class="date-sep">${mDate}</div>`:'';
+    lastDate=mDate;
     const time=new Date(m.timestamp).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
     const icon=m.type==='image'?'🖼️':m.type==='audio'?'🎵':m.type==='document'?'📄':'';
     const body=icon?`<span class="media-icon">${icon}</span>${esc(m.body||'')}`:`${esc(m.body||'')}`;
-    const extra=m.type!=='text'?' media-bubble':'';
-    return `<div class="bubble ${m.direction}${extra}">${body}<span class="time">${time}</span></div>`;
+    const extra=m.type&&m.type!=='text'?' media-b':'';
+    return`${sep}<div class="bubble ${m.direction}${extra}">${body}<span class="btime">${time}</span></div>`;
   }).join('');
   if(scrollForce||atBottom)c.scrollTop=c.scrollHeight;
 }
 
-// Envio de texto
+// Send text
 async function sendMsg(){
-  const inp=document.getElementById('msg-input');
-  const body=inp?.value.trim();
-  if(!body||!currentPhone)return;
-  const btn=document.getElementById('btn-send');
-  btn.disabled=true; inp.value='';
+  const inp=document.getElementById('msg-in');
+  const body=inp?.value.trim();if(!body||!currentPhone)return;
+  const btn=document.getElementById('sbtn');btn.disabled=true;inp.value='';
   document.getElementById('quick-menu')?.classList.add('hidden');
   try{
     const r=await fetch(`/api/messages/${currentPhone}/send`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({body})});
     const d=await r.json();
-    if(!d.ok){toast('Erro: '+(d.error||'?'),'#f87171');inp.value=body;}
+    if(!d.ok){toast('Erro: '+(d.error||'?'),'var(--danger)');inp.value=body;}
     else{await loadMessages(true);await loadConversations(false);}
-  }catch{toast('Erro de conexão','#f87171');inp.value=body;}
+  }catch{toast('Erro de conexão','var(--danger)');inp.value=body;}
   finally{btn.disabled=false;inp?.focus();}
 }
 
-// Envio de mídia
-async function sendMedia(input,_type){
-  const file=input.files[0];
-  if(!file)return;
-  const label=_type==='image'?'imagem':'áudio';
-  toast(`Enviando ${label}...`,'#fbbf24');
-  const fd=new FormData();
-  fd.append('file',file);
+// Send media
+async function sendMedia(input,_t){
+  const file=input.files[0];if(!file)return;
+  toast(`Enviando ${_t==='image'?'imagem':'áudio'}...','var(--warn)');
+  const fd=new FormData();fd.append('file',file);
   try{
     const r=await fetch(`/api/messages/${currentPhone}/media`,{method:'POST',body:fd});
     const d=await r.json();
-    if(d.ok){toast(`✅ ${_type==='image'?'Imagem':'Áudio'} enviado!`);await loadMessages(true);await loadConversations(false);}
-    else toast('Erro: '+(d.error||'?'),'#f87171');
-  }catch{toast('Erro de conexão','#f87171');}
+    if(d.ok){toast(`✅ ${_t==='image'?'Imagem':'Áudio'} enviado!`);await loadMessages(true);await loadConversations(false);}
+    else toast('Erro: '+(d.error||'?'),'var(--danger)');
+  }catch{toast('Erro de conexão','var(--danger)');}
   input.value='';
 }
 
 // Quick replies
-function toggleQuickMenu(){
-  document.getElementById('quick-menu')?.classList.toggle('hidden');
+function toggleQM(){document.getElementById('quick-menu')?.classList.toggle('hidden');}
+function renderQItems(){
+  const c=document.getElementById('quick-items');if(!c)return;
+  if(!quickReplies.length){c.innerHTML='<div class="empty-state" style="padding:.7rem">Nenhuma. <span style="color:var(--accent);cursor:pointer" onclick="switchView(\'config\')">Adicionar</span></div>';return;}
+  c.innerHTML=quickReplies.map(q=>`<div class="quick-item" onclick="useQ(${JSON.stringify(q.body)})">${esc(q.body)}</div>`).join('');
 }
-function renderQuickItems(){
-  const c=document.getElementById('quick-items');
-  if(!c)return;
-  if(!quickReplies.length){c.innerHTML='<div class="empty-list" style="padding:.8rem">Nenhuma resposta. <span style="color:#00a884;cursor:pointer" onclick="switchView(\'config\')">Adicionar</span></div>';return;}
-  c.innerHTML=quickReplies.map(qr=>`<div class="quick-item" onclick="useQuick(${JSON.stringify(qr.body)})">${esc(qr.body)}</div>`).join('');
-}
-function useQuick(body){
-  const inp=document.getElementById('msg-input');
-  if(inp)inp.value=body;
-  document.getElementById('quick-menu')?.classList.add('hidden');
-  inp?.focus();
-}
-async function loadQuickReplies(){
-  const r=await fetch('/api/quick-replies');
-  quickReplies=await r.json();
-}
-
-// Sale bar
-function toggleSaleBar(){
-  saleBarOpen=!saleBarOpen;
-  const slot=document.getElementById('sale-slot');
-  if(!slot)return;
-  if(saleBarOpen){
-    slot.innerHTML=`<div class="sale-bar">
-      <label>💰 Valor:</label>
-      <input class="sale-input" type="number" id="sale-val" placeholder="Ex: 297.00" step="0.01" min="0"/>
-      <button class="btn-sale-confirm" id="sale-ok" onclick="confirmSale()">Confirmar</button>
-      <button class="btn-sale-cancel" onclick="toggleSaleBar()">✕</button>
-    </div>`;
-    setTimeout(()=>document.getElementById('sale-val')?.focus(),40);
-    document.getElementById('sale-val').onkeydown=e=>{if(e.key==='Enter')confirmSale();};
-  } else slot.innerHTML='';
-}
-async function confirmSale(){
-  const val=parseFloat(document.getElementById('sale-val')?.value);
-  if(!val||val<=0){alert('Informe um valor válido');return;}
-  const btn=document.getElementById('sale-ok');
-  btn.disabled=true; btn.textContent='Enviando...';
-  const r=await fetch(`/api/leads/${currentLead.id}/venda`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({valor:val})});
-  const d=await r.json();
-  btn.disabled=false; btn.textContent='Confirmar';
-  if(d.ok){
-    toast('✅ Venda registrada'+(d.metaResult?.events_received?' + Meta!':''));
-    saleBarOpen=false;
-    document.getElementById('sale-slot').innerHTML='';
-    await loadConversations(false);
-    currentLead=conversations.find(c=>c.phone===currentPhone);
-    const sel=document.getElementById('status-sel');
-    if(sel)sel.value='comprou';
-    // atualiza info de compras no sub-header
-    const sub=document.querySelector('.chat-hdr-sub');
-    if(sub)sub.innerHTML=currentPhone+getPurchaseInfo();
-  } else { alert('Erro: '+(d.error||'?')); }
-}
+function useQ(body){const i=document.getElementById('msg-in');if(i)i.value=body;document.getElementById('quick-menu')?.classList.add('hidden');i?.focus();}
+async function loadQReplies(){const r=await fetch('/api/quick-replies');quickReplies=await r.json();}
 
 // Status
-async function updateStatus(leadId,status){
-  await fetch(`/api/leads/${leadId}/status`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
-  await loadConversations(false);
-  currentLead=conversations.find(c=>c.phone===currentPhone);
+async function updStatus(id,status){
+  await fetch(`/api/leads/${id}/status`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
+  await loadConversations(false);currentLead=conversations.find(c=>c.phone===currentPhone);
 }
 
-// Mobile back
-function closeChat(){
-  document.getElementById('crm-layout').classList.remove('chat-open');
-  currentPhone=null; currentLead=null;
+// Sale modal (CRM)
+function openSaleModal(){
+  if(!currentLead)return;
+  salePendingLeadId=currentLead.id;
+  document.getElementById('sm-nome').value=currentLead.nome||'';
+  document.getElementById('sm-valor').value='';
+  document.getElementById('sm-tipo').value='';
+  document.getElementById('sale-modal-bd').classList.add('open');
+  setTimeout(()=>document.getElementById('sm-valor').focus(),60);
 }
+function closeSaleModal(){document.getElementById('sale-modal-bd').classList.remove('open');salePendingLeadId=null;}
+async function confirmSaleModal(){
+  const val=parseFloat(document.getElementById('sm-valor').value);
+  if(!val||val<=0){alert('Informe um valor válido');return;}
+  const nome=document.getElementById('sm-nome').value;
+  const tipo=document.getElementById('sm-tipo').value;
+  const btn=document.getElementById('sm-confirm');btn.disabled=true;btn.textContent='Enviando...';
+  const r=await fetch(`/api/leads/${salePendingLeadId}/venda`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({valor:val,nome,tipo_leitura:tipo})});
+  const d=await r.json();
+  btn.disabled=false;btn.textContent='Confirmar Venda';
+  if(d.ok){
+    toast('✅ Venda registrada'+(d.metaResult?.events_received?' + Meta!':''));
+    closeSaleModal();
+    await loadConversations(false);
+    currentLead=conversations.find(c=>c.phone===currentPhone);
+    const sel=document.getElementById('status-sel');if(sel)sel.value='comprou';
+    const sub=document.querySelector('.chat-sub');
+    if(sub){currentLead=conversations.find(c=>c.phone===currentPhone);sub.innerHTML=esc(currentPhone)+getPurchInfo();}
+  } else alert('Erro: '+(d.error||'?'));
+}
+document.getElementById('sale-modal-bd').addEventListener('click',e=>{if(e.target===e.currentTarget)closeSaleModal();});
+document.getElementById('sm-valor').addEventListener('keydown',e=>{if(e.key==='Enter')confirmSaleModal();});
 
-// Filtros sidebar
-document.querySelectorAll('.sf-btn').forEach(b=>b.addEventListener('click',()=>{
-  document.querySelectorAll('.sf-btn').forEach(x=>x.classList.remove('active'));
-  b.classList.add('active'); currentFilter=b.dataset.filter; renderConvList();
-}));
-document.getElementById('search').addEventListener('input',()=>{ updateCounts(); renderConvList(); });
+// Close quick menu on outside click
 document.addEventListener('click',e=>{
-  const menu=document.getElementById('quick-menu');
-  const btn=document.getElementById('btn-quick');
-  if(menu&&!menu.classList.contains('hidden')&&!menu.contains(e.target)&&e.target!==btn)
-    menu.classList.add('hidden');
+  const m=document.getElementById('quick-menu'),b=document.getElementById('qbtn');
+  if(m&&!m.classList.contains('hidden')&&!m.contains(e.target)&&e.target!==b)m.classList.add('hidden');
 });
 
-// ══════════════════════════════════════════════════════
+// Mobile back
+function closeChat(){document.getElementById('crm-layout').classList.remove('chat-open');currentPhone=null;currentLead=null;}
+
+// ═══════════════════════════════════════════
 // DASHBOARD
-// ══════════════════════════════════════════════════════
-async function loadDashboard(){
-  const r=await fetch('/api/leads');
-  dashLeads=await r.json();
-  renderDash();
+// ═══════════════════════════════════════════
+async function loadDashboard(){const r=await fetch('/api/leads');dashLeads=await r.json();renderDash();}
+
+function periodFilter(leads){
+  const now=new Date();
+  const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const monday=(()=>{const d=new Date(today);const day=d.getDay()||7;d.setDate(d.getDate()-day+1);return d;})();
+  const firstOfMonth=new Date(now.getFullYear(),now.getMonth(),1);
+  switch(dashPeriod){
+    case'hoje':return leads.filter(l=>new Date(l.created_at)>=today);
+    case'semana':return leads.filter(l=>new Date(l.created_at)>=monday);
+    case'mes':return leads.filter(l=>new Date(l.created_at)>=firstOfMonth);
+    case'custom':{
+      const from=document.getElementById('dt-from')?.value;
+      const to=document.getElementById('dt-to')?.value;
+      if(!from||!to)return leads;
+      const f=new Date(from),t=new Date(to);t.setDate(t.getDate()+1);
+      return leads.filter(l=>{const d=new Date(l.created_at);return d>=f&&d<t;});
+    }
+    default:return leads;
+  }
 }
+
+function tabFilter(leads){
+  if(dashTab==='leads')return leads.filter(l=>l.status!=='comprou');
+  if(dashTab==='compras')return leads.filter(l=>l.status==='comprou');
+  return leads;
+}
+
 function renderDash(){
-  const vendas=dashLeads.filter(l=>l.status==='comprou');
+  const period=periodFilter(dashLeads);
+  const vendas=period.filter(l=>l.status==='comprou');
   const receita=vendas.reduce((s,l)=>s+(parseFloat(l.valor)||0),0);
-  const taxa=dashLeads.length?((vendas.length/dashLeads.length)*100).toFixed(1):0;
-  document.getElementById('d-total').textContent=dashLeads.length;
+  const taxa=period.length?((vendas.length/period.length)*100).toFixed(1):0;
+
+  document.getElementById('d-total').textContent=period.length;
   document.getElementById('d-vendas').textContent=vendas.length;
-  document.getElementById('d-receita').textContent='R$ '+receita.toLocaleString('pt-BR',{minimumFractionDigits:2});
+  document.getElementById('d-receita').textContent=fmtBRL(receita);
   document.getElementById('d-conv').textContent=taxa+'%';
 
-  const f=dashFilter==='todos'?dashLeads:dashLeads.filter(l=>dashFilter.split(',').includes(l.status));
+  // Organic / Paid
+  const organic=period.filter(l=>!l.ctwa_clid);
+  const paid=period.filter(l=>!!l.ctwa_clid);
+  const orgSales=organic.filter(l=>l.status==='comprou');
+  const paidSales=paid.filter(l=>l.status==='comprou');
+  const orgR=orgSales.reduce((s,l)=>s+(parseFloat(l.valor)||0),0);
+  const paidR=paidSales.reduce((s,l)=>s+(parseFloat(l.valor)||0),0);
+  document.getElementById('d-org-receita').textContent=fmtBRL(orgR);
+  document.getElementById('d-org-count').textContent=`${orgSales.length} vendas · ${organic.length} leads`;
+  document.getElementById('d-paid-receita').textContent=fmtBRL(paidR);
+  document.getElementById('d-paid-count').textContent=`${paidSales.length} vendas · ${paid.length} leads`;
+
+  // Table
+  const rows=tabFilter(period);
   const tbody=document.getElementById('dash-tbody');
-  if(!f.length){tbody.innerHTML='<tr><td colspan="7" class="empty-list">Nenhum resultado</td></tr>';return;}
-  tbody.innerHTML=f.map(l=>{
-    const date=new Date(l.created_at).toLocaleString('pt-BR');
-    const valor=l.valor?'R$ '+parseFloat(l.valor).toLocaleString('pt-BR',{minimumFractionDigits:2}):'—';
+  if(!rows.length){tbody.innerHTML=`<tr><td colspan="7" class="dash-empty">Nenhum resultado</td></tr>`;return;}
+  tbody.innerHTML=rows.map(l=>{
     const sk=l.status||'lead';
-    const clid=l.ctwa_clid?`<span class="clid-chip" title="${esc(l.ctwa_clid)}">${esc(l.ctwa_clid)}</span>`:'—';
+    const origem=l.ctwa_clid?`<span class="origin-tag paid">Pago</span>`:`<span class="origin-tag organic">Orgânico</span>`;
+    const valor=l.valor?fmtBRL(l.valor):'—';
+    const date=new Date(l.created_at).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
     const acao=l.status==='comprou'
-      ?(l.purchase_sent_at?'<span class="sent-lbl">✓ Enviado Meta</span>':'<span class="sent-lbl">✓ Vendido</span>')
-      :`<button class="btn-venda-dash" onclick="openDashModal('${l.id}')">Registrar Venda</button>`;
-    return `<tr><td>${esc(l.phone)}</td><td>${esc(l.nome||'—')}</td><td><span class="badge ${sk}">${esc(sk)}</span></td><td>${clid}</td><td>${valor}</td><td>${date}</td><td>${acao}</td></tr>`;
+      ?`<span style="color:#4ade80;font-size:.76rem">✓ Vendido</span>`
+      :`<button class="btn-reg" onclick="openDsModal('${l.id}','${esc(l.nome||'')}')">Registrar Venda</button>`;
+    return`<tr>
+      <td style="font-size:.8rem;color:var(--muted)">${esc(l.phone)}</td>
+      <td>${esc(l.nome||'—')}</td>
+      <td><span class="badge ${sk}">${esc(sk)}</span></td>
+      <td>${origem}</td>
+      <td>${valor}</td>
+      <td style="font-size:.79rem;color:var(--muted)">${date}</td>
+      <td>${acao}</td>
+    </tr>`;
   }).join('');
 }
 
-document.querySelectorAll('.df-btn').forEach(b=>b.addEventListener('click',()=>{
-  document.querySelectorAll('.df-btn').forEach(x=>x.classList.remove('active'));
-  b.classList.add('active'); dashFilter=b.dataset.dfilter; renderDash();
+// Period buttons
+document.querySelectorAll('.period-btn').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.period-btn').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');dashPeriod=b.dataset.period;
+  document.getElementById('date-range').classList.toggle('visible',dashPeriod==='custom');
+  renderDash();
 }));
+function setDTab(btn,tab){
+  document.querySelectorAll('.dash-tab').forEach(x=>x.classList.remove('active'));
+  btn.classList.add('active');dashTab=tab;renderDash();
+}
 
-let pendingDashId=null;
-function openDashModal(id){ pendingDashId=id; document.getElementById('dash-modal').classList.add('open'); setTimeout(()=>document.getElementById('dm-valor').focus(),80); }
-function closeDashModal(){ document.getElementById('dash-modal').classList.remove('open'); pendingDashId=null; document.getElementById('dm-nome').value=''; document.getElementById('dm-valor').value=''; }
-async function confirmDashSale(){
-  const valor=parseFloat(document.getElementById('dm-valor').value);
-  const nome=document.getElementById('dm-nome').value;
-  if(!valor||valor<=0){alert('Valor inválido');return;}
-  const btn=document.getElementById('dm-confirm'); btn.disabled=true; btn.textContent='Enviando...';
-  const r=await fetch(`/api/leads/${pendingDashId}/venda`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({valor,nome})});
-  const d=await r.json();
-  btn.disabled=false; btn.textContent='Confirmar';
-  if(d.ok){ toast('✅ Venda registrada'+(d.metaResult?.events_received?' + Meta!':'')); closeDashModal(); await loadDashboard(); }
+// Dashboard sale modal
+function openDsModal(id,nome){
+  dsPendingLeadId=id;
+  document.getElementById('ds-nome').value=nome||'';
+  document.getElementById('ds-valor').value='';
+  document.getElementById('ds-tipo').value='';
+  document.getElementById('dsale-bd').classList.add('open');
+  setTimeout(()=>document.getElementById('ds-valor').focus(),60);
+}
+function closeDsModal(){document.getElementById('dsale-bd').classList.remove('open');dsPendingLeadId=null;}
+async function confirmDsModal(){
+  const val=parseFloat(document.getElementById('ds-valor').value);
+  if(!val||val<=0){alert('Valor inválido');return;}
+  const nome=document.getElementById('ds-nome').value;
+  const tipo=document.getElementById('ds-tipo').value;
+  const btn=document.getElementById('ds-confirm');btn.disabled=true;btn.textContent='Enviando...';
+  const r=await fetch(`/api/leads/${dsPendingLeadId}/venda`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({valor:val,nome,tipo_leitura:tipo})});
+  const d=await r.json();btn.disabled=false;btn.textContent='Confirmar Venda';
+  if(d.ok){toast('✅ Venda registrada'+(d.metaResult?.events_received?' + Meta!':''));closeDsModal();await loadDashboard();}
   else alert('Erro: '+(d.error||'?'));
 }
-document.getElementById('dash-modal').addEventListener('click',e=>{ if(e.target===e.currentTarget)closeDashModal(); });
+document.getElementById('dsale-bd').addEventListener('click',e=>{if(e.target===e.currentTarget)closeDsModal();});
+document.getElementById('ds-valor').addEventListener('keydown',e=>{if(e.key==='Enter')confirmDsModal();});
 
-// ══════════════════════════════════════════════════════
-// CONFIG (Respostas rápidas)
-// ══════════════════════════════════════════════════════
-async function cfgLoad(){
-  const r=await fetch('/api/quick-replies');
-  quickReplies=await r.json();
-  cfgRender();
-}
+// ═══════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════
+async function cfgLoad(){const r=await fetch('/api/quick-replies');quickReplies=await r.json();cfgRender();}
 function cfgRender(){
-  const list=document.getElementById('replies-list');
-  if(!list)return;
-  if(!quickReplies.length){list.innerHTML='<div class="empty-list">Nenhuma resposta cadastrada.</div>';return;}
-  list.innerHTML=quickReplies.map(r=>`
-    <div class="reply-card" id="rc-${r.id}">
-      <div class="reply-body-txt" id="rbt-${r.id}">${esc(r.body)}</div>
-      <textarea class="reply-ta" id="rta-${r.id}" style="display:none">${esc(r.body)}</textarea>
-      <div class="reply-acts">
-        <button class="btn-del-r" onclick="cfgDel('${r.id}')">🗑 Apagar</button>
+  const el=document.getElementById('replies-list');if(!el)return;
+  if(!quickReplies.length){el.innerHTML='<div class="empty-state">Nenhuma resposta ainda.</div>';return;}
+  el.innerHTML=quickReplies.map(r=>`
+    <div class="rc" id="rc-${r.id}">
+      <div class="rc-body" id="rb-${r.id}">${esc(r.body)}</div>
+      <textarea class="rc-ta" id="rt-${r.id}" style="display:none">${esc(r.body)}</textarea>
+      <div class="rc-acts">
+        <button class="btn-del-r" onclick="cfgDel('${r.id}')">🗑</button>
         <button class="btn-edit-r" id="re-${r.id}" onclick="cfgEdit('${r.id}')">✏️ Editar</button>
         <button class="btn-save-r" id="rs-${r.id}" style="display:none" onclick="cfgSave('${r.id}')">✔ Salvar</button>
         <button class="btn-cancel-r" id="rc2-${r.id}" style="display:none" onclick="cfgCancelEdit('${r.id}')">✕</button>
@@ -740,54 +1064,53 @@ function cfgRender(){
 }
 function cfgEdit(id){
   const r=quickReplies.find(x=>x.id===id);
-  document.getElementById(`rta-${id}`).value=r.body;
-  document.getElementById(`rbt-${id}`).style.display='none';
-  document.getElementById(`rta-${id}`).style.display='';
+  document.getElementById(`rt-${id}`).value=r.body;
+  document.getElementById(`rb-${id}`).style.display='none';
+  document.getElementById(`rt-${id}`).style.display='';
   document.getElementById(`re-${id}`).style.display='none';
   document.getElementById(`rs-${id}`).style.display='';
   document.getElementById(`rc2-${id}`).style.display='';
   document.getElementById(`rc-${id}`).classList.add('editing');
-  document.getElementById(`rta-${id}`).focus();
+  document.getElementById(`rt-${id}`).focus();
 }
 function cfgCancelEdit(id){
-  document.getElementById(`rbt-${id}`).style.display='';
-  document.getElementById(`rta-${id}`).style.display='none';
+  document.getElementById(`rb-${id}`).style.display='';
+  document.getElementById(`rt-${id}`).style.display='none';
   document.getElementById(`re-${id}`).style.display='';
   document.getElementById(`rs-${id}`).style.display='none';
   document.getElementById(`rc2-${id}`).style.display='none';
   document.getElementById(`rc-${id}`).classList.remove('editing');
 }
 async function cfgSave(id){
-  const body=document.getElementById(`rta-${id}`).value.trim();
+  const body=document.getElementById(`rt-${id}`).value.trim();
   if(!body){alert('Texto vazio');return;}
   const r=await fetch(`/api/quick-replies/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({body})});
-  if((await r.json()).ok){toast('Salvo!');await cfgLoad();renderQuickItems();}
+  if((await r.json()).ok){toast('Salvo!');await cfgLoad();renderQItems();}
 }
 async function cfgDel(id){
-  if(!confirm('Apagar esta resposta?'))return;
+  if(!confirm('Apagar?'))return;
   const r=await fetch(`/api/quick-replies/${id}`,{method:'DELETE'});
-  if((await r.json()).ok){toast('Apagado');await cfgLoad();renderQuickItems();}
+  if((await r.json()).ok){toast('Apagado');await cfgLoad();renderQItems();}
 }
 async function cfgAdd(){
-  const body=document.getElementById('cfg-new-body').value.trim();
+  const body=document.getElementById('cfg-ta').value.trim();
   if(!body){alert('Digite o texto');return;}
-  const btn=document.getElementById('cfg-add-btn'); btn.disabled=true;
+  const btn=document.getElementById('cfg-add-btn');btn.disabled=true;
   const r=await fetch('/api/quick-replies',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({body})});
-  const d=await r.json(); btn.disabled=false;
-  if(d.id){document.getElementById('cfg-new-body').value='';toast('Adicionado!');await cfgLoad();renderQuickItems();}
+  const d=await r.json();btn.disabled=false;
+  if(d.id){document.getElementById('cfg-ta').value='';toast('Adicionado!');await cfgLoad();renderQItems();}
 }
-document.getElementById('cfg-new-body').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.ctrlKey)cfgAdd();});
+document.getElementById('cfg-ta').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.ctrlKey)cfgAdd();});
 
-// ══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════
 // POLLING 3s
-// ══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════
 async function tick(){
   await loadConversations(false);
-  if(currentPhone) await loadMessages(false);
+  if(currentPhone)await loadMessages(false);
 }
-
 (async()=>{
-  await loadQuickReplies();
+  await loadQReplies();
   await loadConversations(true);
   setInterval(tick,3000);
 })();
