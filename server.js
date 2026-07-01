@@ -325,38 +325,21 @@ app.post('/api/messages/:phone/send-image-url', async (req, res) => {
   if (!image_url) return res.status(400).json({ error: 'URL da imagem ausente' });
 
   try {
-    // 1. Baixa a imagem do Supabase Storage
-    const imgRes = await fetch(image_url);
-    if (!imgRes.ok) return res.status(502).json({ error: 'Falha ao baixar imagem do Storage' });
-    const contentType = imgRes.headers.get('content-type') || 'image/jpeg';
-    const buffer = Buffer.from(await imgRes.arrayBuffer());
-
-    // Detecta extensão pelo content-type
-    const extMap = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' };
-    const ext = extMap[contentType] || 'jpg';
-    const filename = `quick-reply-image.${ext}`;
-
-    // 2. Upload do buffer pro WhatsApp media endpoint
-    const form = new FormData();
-    form.append('messaging_product', 'whatsapp');
-    form.append('file', new Blob([buffer], { type: contentType }), filename);
-
-    const uploadRes = await fetch(
-      `https://graph.facebook.com/v25.0/${process.env.PHONE_NUMBER_ID}/media`,
-      { method: 'POST', headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}` }, body: form }
-    );
-    const uploadData = await uploadRes.json();
-    if (!uploadRes.ok) {
-      console.error('[QR Image Upload]', JSON.stringify(uploadData));
-      return res.status(502).json({ error: uploadData.error?.message || 'Falha no upload para WhatsApp' });
+    // Extrai o filename e gera uma signed URL válida por 1h (bucket pode ser privado)
+    const filename = image_url.split('/quick-reply-images/').pop();
+    const { data: signed, error: signErr } = await supabase.storage
+      .from('quick-reply-images')
+      .createSignedUrl(filename, 3600);
+    if (signErr || !signed?.signedUrl) {
+      console.error('[QR Image Signed URL]', signErr?.message);
+      return res.status(502).json({ error: 'Falha ao gerar URL de acesso à imagem' });
     }
 
-    // 3. Envia a mensagem com o media_id
     const msgPayload = {
       messaging_product: 'whatsapp',
       to: phone,
       type: 'image',
-      image: { id: uploadData.id, ...(caption ? { caption } : {}) },
+      image: { link: signed.signedUrl, ...(caption ? { caption } : {}) },
     };
     const sendRes = await fetch(`https://graph.facebook.com/v25.0/${process.env.PHONE_NUMBER_ID}/messages`, {
       method: 'POST',
