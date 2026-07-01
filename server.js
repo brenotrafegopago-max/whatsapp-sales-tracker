@@ -68,7 +68,7 @@ app.post('/webhook', async (req, res) => {
 
           const { data: existing } = await supabase
             .from('leads')
-            .select('id, ctwa_clid, nome')
+            .select('id, ctwa_clid, nome, unread_count')
             .eq('phone', phone)
             .single();
 
@@ -79,10 +79,14 @@ app.post('/webhook', async (req, res) => {
               nome: profileName,
               status: 'novo',
               last_message_at: nowIso,
+              unread_count: 1,
             });
             console.log(`[DB] Novo lead salvo: ${phone}`);
           } else {
-            const updates = { last_message_at: nowIso };
+            const updates = {
+              last_message_at: nowIso,
+              unread_count: (existing.unread_count || 0) + 1,
+            };
             if (ctwa_clid && !existing.ctwa_clid) updates.ctwa_clid = ctwa_clid;
             if (profileName && !existing.nome) updates.nome = profileName;
             await supabase.from('leads').update(updates).eq('id', existing.id);
@@ -135,6 +139,7 @@ app.get('/api/conversations', async (req, res) => {
     profile_pic_url: row.profile_pic_url || null,
     tags: row.tags || [],
     notas: row.notas || null,
+    unread_count: row.unread_count || 0,
     lastMessage: row.last_msg_body != null ? {
       body: row.last_msg_body,
       direction: row.last_msg_direction,
@@ -227,6 +232,22 @@ app.patch('/api/leads/:id/status', async (req, res) => {
   const { error } = await supabase.from('leads').update({ status }).eq('id', id);
   if (error) return res.status(500).json({ error: error.message });
 
+  res.json({ ok: true });
+});
+
+// ─── API: Marcar conversa como lida / não lida ───────────────────────────────
+
+app.patch('/api/leads/:id/read', async (req, res) => {
+  const { id } = req.params;
+  const { error } = await supabase.from('leads').update({ unread_count: 0 }).eq('id', id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ ok: true });
+});
+
+app.patch('/api/leads/:id/unread', async (req, res) => {
+  const { id } = req.params;
+  const { error } = await supabase.from('leads').update({ unread_count: 1 }).eq('id', id);
+  if (error) return res.status(500).json({ error: error.message });
   res.json({ ok: true });
 });
 

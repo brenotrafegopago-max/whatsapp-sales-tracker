@@ -330,6 +330,15 @@ tbody td{padding:.65rem .82rem;vertical-align:middle}
 .btn-confirm-s{background:linear-gradient(135deg,var(--gold-dk),var(--gold));border:none;color:#000;padding:.46rem 1.25rem;border-radius:7px;font-weight:700;cursor:pointer}
 .btn-confirm-s:disabled{opacity:.5;cursor:not-allowed}
 
+/* Context menu */
+.ctx-menu{position:fixed;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);z-index:500;min-width:180px;box-shadow:0 8px 24px rgba(0,0,0,.55);padding:.3rem 0}
+.ctx-menu.hidden{display:none}
+.ctx-item{padding:.48rem .85rem;cursor:pointer;font-size:.82rem;display:flex;align-items:center;gap:.5rem;transition:background .1s}
+.ctx-item:hover{background:var(--surface3)}
+
+/* Unread badge inline */
+.unread-badge{display:inline-flex;align-items:center;justify-content:center;background:var(--primary);color:#fff;font-size:.6rem;font-weight:700;min-width:18px;height:18px;border-radius:99px;padding:0 4px;flex-shrink:0}
+
 /* Toast */
 .toast{position:fixed;top:1rem;right:1rem;padding:.55rem .95rem;border-radius:9px;font-size:.81rem;font-weight:600;z-index:9999;opacity:0;transform:translateY(-8px);transition:all .22s;pointer-events:none;max-width:280px}
 .toast.show{opacity:1;transform:translateY(0)}
@@ -410,13 +419,17 @@ tbody td{padding:.65rem .82rem;vertical-align:middle}
 </div>
 
 <div class="toast" id="toast"></div>
+<div class="ctx-menu hidden" id="ctx-menu">
+  <div class="ctx-item" id="ctx-unread-item">🔴 Marcar como não lida</div>
+</div>
 
 <div class="shell">
   <!-- Side nav -->
   <nav class="side-nav">
     <div class="nav-logo" style="color:var(--gold);font-size:1.5rem">⚡</div>
-    <button class="nav-btn active" data-view="crm" onclick="switchView('crm')">
+    <button class="nav-btn active" data-view="crm" onclick="switchView('crm')" style="position:relative">
       💬<span class="nav-lbl">Chat</span>
+      <span class="nav-unread-badge" id="nav-unread-badge" style="display:none;position:absolute;top:4px;right:6px;background:#EF4444;color:#fff;font-size:.52rem;font-weight:700;min-width:15px;height:15px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;line-height:1">0</span>
     </button>
     <button class="nav-btn" data-view="funil" onclick="switchView('funil')">
       🎯<span class="nav-lbl">Funil</span>
@@ -426,6 +439,10 @@ tbody td{padding:.65rem .82rem;vertical-align:middle}
     </button>
     <button class="nav-btn" data-view="config" onclick="switchView('config')">
       ⚡<span class="nav-lbl">Config</span>
+    </button>
+    <div style="flex:1"></div>
+    <button class="nav-btn" id="sound-toggle-btn" onclick="toggleSound()" title="Som de notificação" style="margin-bottom:.3rem">
+      <span id="sound-icon">🔔</span><span class="nav-lbl" id="sound-lbl">Som</span>
     </button>
   </nav>
 
@@ -545,7 +562,8 @@ let conversations=[], currentPhone=null, currentLead=null;
 let crmFilter='todos', quickReplies=[], dashLeads=[], dashPeriod='todos', dashTab='todos';
 let lastMsgTs={}, editingName=false, notesOpen=false;
 let salePendingLeadId=null, dsPendingLeadId=null, dragLeadId=null;
-let _audioCtx=null;
+let _audioCtx=null, _userInteracted=false;
+let soundEnabled=localStorage.getItem('zapfire_sound')!=='off';
 const profilePics={};
 
 const TAGS_DEF=[
@@ -607,16 +625,58 @@ function toast(msg,color='var(--primary)'){
   t._t=setTimeout(()=>t.classList.remove('show'),3200);
 }
 function beep(){
+  if(!soundEnabled||!_userInteracted)return;
   try{
     if(!_audioCtx)_audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-    const o=_audioCtx.createOscillator(),g=_audioCtx.createGain();
-    o.connect(g);g.connect(_audioCtx.destination);
-    o.frequency.value=880;o.type='sine';
-    g.gain.setValueAtTime(.08,_audioCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(.001,_audioCtx.currentTime+.2);
-    o.start();o.stop(_audioCtx.currentTime+.2);
+    const ctx=_audioCtx;
+    function pip(startAt,freq){
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.connect(g);g.connect(ctx.destination);
+      o.type='sine';o.frequency.value=freq;
+      g.gain.setValueAtTime(0,startAt);
+      g.gain.linearRampToValueAtTime(.09,startAt+.01);
+      g.gain.exponentialRampToValueAtTime(.001,startAt+.18);
+      o.start(startAt);o.stop(startAt+.2);
+    }
+    const now=ctx.currentTime;
+    pip(now,880);
+    pip(now+.22,1100);
   }catch{}
 }
+function toggleSound(){
+  soundEnabled=!soundEnabled;
+  localStorage.setItem('zapfire_sound',soundEnabled?'on':'off');
+  document.getElementById('sound-icon').textContent=soundEnabled?'🔔':'🔕';
+  document.getElementById('sound-lbl').textContent=soundEnabled?'Som':'Mudo';
+  toast(soundEnabled?'🔔 Som ativado':'🔕 Som desativado');
+}
+function updateNavUnreadBadge(){
+  const total=conversations.reduce((s,c)=>s+(c.phone!==currentPhone?(c.unread_count||0):0),0);
+  const badge=document.getElementById('nav-unread-badge');
+  if(!badge)return;
+  if(total>0){badge.textContent=total>99?'99+':total;badge.style.display='flex';}
+  else badge.style.display='none';
+}
+// Context menu
+let _ctxPhone=null;
+function openCtxMenu(e,phone){
+  e.preventDefault();
+  _ctxPhone=phone;
+  const menu=document.getElementById('ctx-menu');
+  menu.style.left=Math.min(e.clientX,window.innerWidth-190)+'px';
+  menu.style.top=Math.min(e.clientY,window.innerHeight-80)+'px';
+  menu.classList.remove('hidden');
+}
+function closeCtxMenu(){document.getElementById('ctx-menu')?.classList.add('hidden');_ctxPhone=null;}
+document.getElementById('ctx-unread-item').onclick=async()=>{
+  if(!_ctxPhone)return;
+  const lead=conversations.find(c=>c.phone===_ctxPhone);
+  if(!lead)return;
+  lead.unread_count=1;
+  await fetch('/api/leads/'+lead.id+'/unread',{method:'PATCH'});
+  closeCtxMenu();
+  renderConvList();
+};
 function statusTick(status){
   if(status==='read')return'<span class="msg-tick read">✓✓</span>';
   if(status==='delivered')return'<span class="msg-tick delivered">✓✓</span>';
@@ -678,16 +738,20 @@ function renderConvList(){
   if(!filtered.length){el.innerHTML='<div class="empty-state">Nenhuma conversa</div>';return;}
   el.innerHTML=filtered.map(c=>{
     const sk=c.status||'novo';
-    const isNew=c.phone!==currentPhone&&c.lastMessage?.direction==='in'&&(sk==='novo'||sk==='lead');
-    const av=avatar(c.nome,c.phone,41)+(isNew?'<div class="new-dot"></div>':'')+'</div>';
+    const unread=c.phone!==currentPhone?(c.unread_count||0):0;
+    const av=avatar(c.nome,c.phone,41)+(unread>0?'<div class="new-dot"></div>':'')+'</div>';
     const preview=c.lastMessage?(c.lastMessage.direction==='out'?'Você: ':'')+esc(c.lastMessage.body||''):'Sem mensagens';
-    return'<div class="conv-item'+(c.phone===currentPhone?' active':'')+'" onclick="openConv(\''+esc(c.phone)+'\')">'+
+    const badge=unread>0?'<span class="unread-badge">'+unread+'</span>':'<span class="sdot '+sk+'"></span>';
+    return'<div class="conv-item'+(c.phone===currentPhone?' active':'')+
+      (unread>0?' unread':'')+
+      '" data-phone="'+esc(c.phone)+'" onclick="openConv(\''+esc(c.phone)+'\')" oncontextmenu="openCtxMenu(event,\''+esc(c.phone)+'\')">'+
       av+
       '<div class="conv-info">'+
-        '<div class="conv-top"><span class="conv-name">'+esc(c.nome||c.phone)+'</span><span class="conv-time">'+fmt(c.last_message_at||c.created_at)+'</span></div>'+
-        '<div class="conv-bottom"><span class="conv-preview">'+preview+'</span><span class="sdot '+sk+'"></span></div>'+
+        '<div class="conv-top"><span class="conv-name"'+(unread>0?' style="font-weight:700;color:var(--text)"':'')+'>'+esc(c.nome||c.phone)+'</span><span class="conv-time">'+fmt(c.last_message_at||c.created_at)+'</span></div>'+
+        '<div class="conv-bottom"><span class="conv-preview"'+(unread>0?' style="color:var(--text);font-weight:500"':'')+'>'+preview+'</span>'+badge+'</div>'+
       '</div></div>';
   }).join('');
+  updateNavUnreadBadge();
 }
 document.querySelectorAll('.sf-tab').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('.sf-tab').forEach(x=>x.classList.remove('active'));
@@ -702,6 +766,13 @@ async function openConv(phone){
   currentPhone=phone;currentLead=conversations.find(c=>c.phone===phone);
   editingName=false;
   document.getElementById('crm-layout').classList.add('chat-open');
+  // Zera unread localmente antes do render para remover badge imediatamente
+  if(currentLead&&(currentLead.unread_count||0)>0){
+    currentLead.unread_count=0;
+    const ci=conversations.findIndex(c=>c.phone===phone);
+    if(ci>=0)conversations[ci].unread_count=0;
+    fetch('/api/leads/'+currentLead.id+'/read',{method:'PATCH'});
+  }
   renderConvList();
   await renderChatArea();
 }
@@ -789,7 +860,7 @@ async function renderChatArea(){
 
   document.getElementById('status-sel').onchange=e=>updStatus(currentLead.id,e.target.value);
   document.getElementById('sbtn').onclick=sendMsg;
-  document.getElementById('msg-in').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey)sendMsg();};
+  document.getElementById('msg-in').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}};
   document.getElementById('name-inp').onblur=saveNameEdit;
   document.getElementById('name-inp').onkeydown=e=>{if(e.key==='Enter')saveNameEdit();if(e.key==='Escape')cancelNameEdit();};
 
@@ -1307,7 +1378,18 @@ document.addEventListener('click',e=>{
   if(ew&&!ew.classList.contains('hidden')&&!ew.contains(e.target)&&e.target!==eb)ew.classList.add('hidden');
   const td=document.getElementById('tag-dropdown'),tb=document.getElementById('tag-add-btn');
   if(td&&!td.classList.contains('hidden')&&!td.contains(e.target)&&e.target!==tb)closeTagDropdown();
+  const cm=document.getElementById('ctx-menu');
+  if(cm&&!cm.classList.contains('hidden')&&!cm.contains(e.target))closeCtxMenu();
 });
+// Registra primeira interação do usuário (requisito do browser para Web Audio)
+document.addEventListener('click',()=>{_userInteracted=true;},{once:true});
+document.addEventListener('keydown',()=>{_userInteracted=true;},{once:true});
+// Inicializa ícone do som
+(()=>{
+  const icon=document.getElementById('sound-icon'),lbl=document.getElementById('sound-lbl');
+  if(icon)icon.textContent=soundEnabled?'🔔':'🔕';
+  if(lbl)lbl.textContent=soundEnabled?'Som':'Mudo';
+})();
 
 // ═══════════════════════════════
 // POLLING 3s
