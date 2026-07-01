@@ -316,6 +316,8 @@ app.get('/api/contacts/:phone/profile-photo', async (req, res) => {
 });
 
 // ─── API: Enviar imagem por URL (quick replies com imagem) ────────────────────
+// Estratégia: baixa a imagem do Supabase Storage, faz upload pro WhatsApp
+// media endpoint (obtém media_id) e envia com o id — mais confiável que link direto.
 
 app.post('/api/messages/:phone/send-image-url', async (req, res) => {
   const { phone } = req.params;
@@ -323,29 +325,60 @@ app.post('/api/messages/:phone/send-image-url', async (req, res) => {
   if (!image_url) return res.status(400).json({ error: 'URL da imagem ausente' });
 
   try {
-    const payload = {
+    // 1. Baixa a imagem do Supabase Storage
+    const imgRes = await fetch(image_url);
+    if (!imgRes.ok) return res.status(502).json({ error: 'Falha ao baixar imagem do Storage' });
+    const contentType = imgRes.headers.get('content-type') || 'image/jpeg';
+    const buffer = Buffer.from(await imgRes.arrayBuffer());
+
+    // Detecta extensão pelo content-type
+    const extMap = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' };
+    const ext = extMap[contentType] || 'jpg';
+    const filename = `quick-reply-image.${ext}`;
+
+    // 2. Upload do buffer pro WhatsApp media endpoint
+    const form = new FormData();
+    form.append('messaging_product', 'whatsapp');
+    form.append('file', new Blob([buffer], { type: contentType }), filename);
+
+    const uploadRes = await fetch(
+      `https://graph.facebook.com/v25.0/${process.env.PHONE_NUMBER_ID}/media`,
+      { method: 'POST', headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}` }, body: form }
+    );
+    const uploadData = await uploadRes.json();
+    if (!uploadRes.ok) {
+      console.error('[QR Image Upload]', JSON.stringify(uploadData));
+      return res.status(502).json({ error: uploadData.error?.message || 'Falha no upload para WhatsApp' });
+    }
+
+    // 3. Envia a mensagem com o media_id
+    const msgPayload = {
       messaging_product: 'whatsapp',
       to: phone,
       type: 'image',
-      image: { link: image_url, ...(caption ? { caption } : {}) },
+      image: { id: uploadData.id, ...(caption ? { caption } : {}) },
     };
-    const r = await fetch(`https://graph.facebook.com/v25.0/${process.env.PHONE_NUMBER_ID}/messages`, {
+    const sendRes = await fetch(`https://graph.facebook.com/v25.0/${process.env.PHONE_NUMBER_ID}/messages`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(msgPayload),
     });
-    const result = await r.json();
-    if (!r.ok) return res.status(502).json({ error: result.error?.message || 'Falha ao enviar imagem' });
+    const sendData = await sendRes.json();
+    if (!sendRes.ok) {
+      console.error('[QR Image Send]', JSON.stringify(sendData));
+      return res.status(502).json({ error: sendData.error?.message || 'Falha ao enviar imagem' });
+    }
 
     const nowIso = new Date().toISOString();
     const label = caption ? `[Imagem] ${caption}` : '[Imagem]';
     await supabase.from('messages').insert({
       phone, direction: 'out', type: 'image', body: label,
-      wa_message_id: result.messages?.[0]?.id || null, timestamp: nowIso, status: 'sent',
+      wa_message_id: sendData.messages?.[0]?.id || null, timestamp: nowIso, status: 'sent',
     });
     await supabase.from('leads').update({ last_message_at: nowIso }).eq('phone', phone);
     res.json({ ok: true });
   } catch (err) {
+    console.error('[QR Image]', err.message);
     res.status(500).json({ error: err.message });
   }
 });
