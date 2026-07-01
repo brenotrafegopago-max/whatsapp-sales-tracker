@@ -405,7 +405,7 @@ app.post('/api/leads/:id/venda', async (req, res) => {
       headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         messaging_product: 'whatsapp',
-        to: '5531975265306',
+        to: '5531975073396',
         type: 'text',
         text: { body: notifMsg },
       }),
