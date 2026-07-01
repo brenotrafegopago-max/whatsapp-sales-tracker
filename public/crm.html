@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>CRM — Márcia Taróloga</title>
+<script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js"></script>
 <style>
 :root {
   --bg:        #0b141a;
@@ -399,6 +400,44 @@ tbody td{padding:.7rem .85rem;vertical-align:middle}
 .btn-del-r:hover{background:var(--danger);color:#000}
 .btn-cancel-r{background:none;border:1px solid var(--surface3);color:var(--muted);padding:.3rem .65rem;border-radius:6px;font-size:.76rem;cursor:pointer}
 
+/* Message status ticks */
+.msg-tick{font-size:.62rem;margin-left:.35rem;vertical-align:middle;line-height:1;display:inline}
+.msg-tick.sent{color:var(--muted)}
+.msg-tick.delivered{color:var(--muted)}
+.msg-tick.read{color:#53bdeb}
+
+/* Emoji picker */
+.emoji-wrap{
+  position:absolute;bottom:62px;left:0;z-index:31;
+  border-radius:12px 12px 0 0;overflow:hidden;
+  box-shadow:0 -6px 20px rgba(0,0,0,.5);
+}
+.emoji-wrap.hidden{display:none}
+emoji-picker{
+  --background:var(--surface2);
+  --border-color:var(--border);
+  --emoji-size:1.3rem;
+  --num-columns:8;
+  --input-font-size:.85rem;
+  height:300px;width:340px;
+}
+
+/* Quick reply image */
+.qr-img-thumb{max-height:48px;border-radius:6px;margin-top:.4rem;display:block}
+.btn-img-lbl{
+  display:inline-flex;align-items:center;gap:.3rem;
+  background:var(--surface3);border:1px dashed var(--muted);
+  color:var(--muted);padding:.28rem .65rem;border-radius:6px;
+  font-size:.74rem;cursor:pointer;margin-top:.5rem;
+}
+.btn-img-lbl:hover{border-color:var(--accent);color:var(--accent)}
+.btn-del-img{
+  background:none;border:1px solid var(--danger);color:var(--danger);
+  padding:.22rem .55rem;border-radius:6px;font-size:.7rem;cursor:pointer;
+  margin-left:.4rem;vertical-align:middle;
+}
+.btn-del-img:hover{background:var(--danger);color:#000}
+
 /* ── Toast ── */
 .toast{position:fixed;top:1rem;right:1rem;padding:.6rem 1rem;border-radius:9px;font-size:.83rem;font-weight:600;z-index:9999;opacity:0;transform:translateY(-8px);transition:all .22s;pointer-events:none;max-width:280px}
 .toast.show{opacity:1;transform:translateY(0)}
@@ -607,6 +646,7 @@ let lastMsgTs={};
 let editingName=false;
 let salePendingLeadId=null, dsPendingLeadId=null;
 let _audioCtx=null;
+const profilePics={}; // phone → url|null
 
 // ═══════════════════════════════════════════
 // UTILS
@@ -632,10 +672,20 @@ function initials(name,phone){
 }
 const AV_COLORS=['#6366f1','#8b5cf6','#ec4899','#f59e0b','#10b981','#3b82f6','#ef4444','#14b8a6','#f97316'];
 function avatarColor(str){let h=0;for(const c of(str||''))h=c.charCodeAt(0)+((h<<5)-h);return AV_COLORS[Math.abs(h)%AV_COLORS.length]}
+window.avErr=function(img){img.remove();}; // on profile pic load error, show bg color only
 function avatar(name,phone,size=44){
   const bg=avatarColor(phone||name||'');
   const ini=esc(initials(name,phone));
+  const pic=profilePics[phone];
+  if(pic){
+    return`<div class="avatar" style="width:${size}px;height:${size}px;background:${bg};overflow:hidden;padding:0"><img src="${pic.replace(/"/g,'&quot;')}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block" onerror="avErr(this)">`;
+  }
   return`<div class="avatar" style="width:${size}px;height:${size}px;background:${bg};font-size:${size*.38}px">${ini}`;
+}
+function statusTick(status){
+  if(status==='read')return'<span class="msg-tick read">✓✓</span>';
+  if(status==='delivered')return'<span class="msg-tick delivered">✓✓</span>';
+  return'<span class="msg-tick sent">✓</span>';
 }
 function toast(msg,color='var(--accent)'){
   const t=document.getElementById('toast');
@@ -683,6 +733,7 @@ async function loadConversations(silent=false){
   } else {
     fresh.forEach(c=>{lastMsgTs[c.phone]=c.lastMessage?new Date(c.lastMessage.timestamp).getTime():0;});
   }
+  fresh.forEach(c=>{profilePics[c.phone]=c.profile_pic_url||null;});
   conversations=fresh;
   updateCounts();renderConvList();
 }
@@ -774,6 +825,8 @@ async function renderChatArea(){
       <button class="ic-btn" onclick="document.getElementById('img-in').click()" title="Imagem">📎</button>
       <button class="ic-btn" onclick="document.getElementById('aud-in').click()" title="Áudio">🎵</button>
       <button class="ic-btn" id="qbtn" onclick="toggleQM()" title="Respostas rápidas">⚡</button>
+      <button class="ic-btn" id="emj-btn" title="Emoji">😊</button>
+      <div class="emoji-wrap hidden" id="emoji-wrap"><emoji-picker id="epicker"></emoji-picker></div>
       <input class="composer-in" id="msg-in" placeholder="Digite uma mensagem..."/>
       <button class="send-btn" id="sbtn">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
@@ -787,6 +840,7 @@ async function renderChatArea(){
   document.getElementById('name-inp').onkeydown=e=>{if(e.key==='Enter')saveNameEdit();if(e.key==='Escape')cancelNameEdit();};
 
   renderQItems();
+  setupEmojiPicker();
   await loadMessages(true);
 }
 function getPurchInfo(){
@@ -837,7 +891,8 @@ async function loadMessages(scrollForce=false){
     const icon=m.type==='image'?'🖼️':m.type==='audio'?'🎵':m.type==='document'?'📄':'';
     const body=icon?`<span class="media-icon">${icon}</span>${esc(m.body||'')}`:`${esc(m.body||'')}`;
     const extra=m.type&&m.type!=='text'?' media-b':'';
-    return`${sep}<div class="bubble ${m.direction}${extra}">${body}<span class="btime">${time}</span></div>`;
+    const tick=m.direction==='out'?statusTick(m.status||'sent'):'';
+    return`${sep}<div class="bubble ${m.direction}${extra}">${body}<span class="btime">${time}${tick}</span></div>`;
   }).join('');
   if(scrollForce||atBottom)c.scrollTop=c.scrollHeight;
 }
@@ -876,9 +931,25 @@ function toggleQM(){document.getElementById('quick-menu')?.classList.toggle('hid
 function renderQItems(){
   const c=document.getElementById('quick-items');if(!c)return;
   if(!quickReplies.length){c.innerHTML='<div class="empty-state" style="padding:.7rem">Nenhuma. <span style="color:var(--accent);cursor:pointer" onclick="switchView(\'config\')">Adicionar</span></div>';return;}
-  c.innerHTML=quickReplies.map(q=>`<div class="quick-item" onclick="useQ(${JSON.stringify(q.body)})">${esc(q.body)}</div>`).join('');
+  c.innerHTML=quickReplies.map(q=>`<div class="quick-item" onclick="useQ('${q.id}')">${q.image_url?'🖼️ ':''}${esc(q.body||'(só imagem)')}</div>`).join('');
 }
-function useQ(body){const i=document.getElementById('msg-in');if(i)i.value=body;document.getElementById('quick-menu')?.classList.add('hidden');i?.focus();}
+async function useQ(id){
+  const q=quickReplies.find(x=>x.id===id);if(!q)return;
+  document.getElementById('quick-menu')?.classList.add('hidden');
+  if(q.image_url){
+    if(!currentPhone)return;
+    toast('Enviando...','var(--warn)');
+    try{
+      const r=await fetch(`/api/messages/${currentPhone}/send-image-url`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image_url:q.image_url,caption:q.body||''})});
+      const d=await r.json();
+      if(d.ok){toast('✅ Enviado!');await loadMessages(true);await loadConversations(false);}
+      else toast('Erro: '+(d.error||'?'),'var(--danger)');
+    }catch{toast('Erro de conexão','var(--danger)');}
+  }else{
+    const i=document.getElementById('msg-in');
+    if(i){i.value=q.body;setTimeout(()=>i.focus(),0);}
+  }
+}
 async function loadQReplies(){const r=await fetch('/api/quick-replies');quickReplies=await r.json();}
 
 // Status
@@ -920,10 +991,29 @@ async function confirmSaleModal(){
 document.getElementById('sale-modal-bd').addEventListener('click',e=>{if(e.target===e.currentTarget)closeSaleModal();});
 document.getElementById('sm-valor').addEventListener('keydown',e=>{if(e.key==='Enter')confirmSaleModal();});
 
-// Close quick menu on outside click
+function toggleEmoji(){document.getElementById('emoji-wrap')?.classList.toggle('hidden');}
+function setupEmojiPicker(){
+  const btn=document.getElementById('emj-btn');
+  const wrap=document.getElementById('emoji-wrap');
+  const picker=document.getElementById('epicker');
+  if(!btn||!wrap||!picker)return;
+  btn.onclick=toggleEmoji;
+  picker.addEventListener('emoji-click',e=>{
+    const inp=document.getElementById('msg-in');if(!inp)return;
+    const s=inp.selectionStart,end=inp.selectionEnd;
+    inp.value=inp.value.slice(0,s)+e.detail.unicode+inp.value.slice(end);
+    inp.selectionStart=inp.selectionEnd=s+e.detail.unicode.length;
+    inp.focus();
+    wrap.classList.add('hidden');
+  });
+}
+
+// Close quick menu and emoji picker on outside click
 document.addEventListener('click',e=>{
   const m=document.getElementById('quick-menu'),b=document.getElementById('qbtn');
   if(m&&!m.classList.contains('hidden')&&!m.contains(e.target)&&e.target!==b)m.classList.add('hidden');
+  const ew=document.getElementById('emoji-wrap'),eb=document.getElementById('emj-btn');
+  if(ew&&!ew.classList.contains('hidden')&&!ew.contains(e.target)&&e.target!==eb)ew.classList.add('hidden');
 });
 
 // (closeChat already defined above)
@@ -1049,17 +1139,42 @@ async function cfgLoad(){const r=await fetch('/api/quick-replies');quickReplies=
 function cfgRender(){
   const el=document.getElementById('replies-list');if(!el)return;
   if(!quickReplies.length){el.innerHTML='<div class="empty-state">Nenhuma resposta ainda.</div>';return;}
-  el.innerHTML=quickReplies.map(r=>`
+  el.innerHTML=quickReplies.map(r=>{
+    const imgSection=r.image_url
+      ?`<div style="margin-top:.5rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
+          <img src="${esc(r.image_url)}" class="qr-img-thumb" alt="imagem"/>
+          <button class="btn-del-img" onclick="cfgDelImg('${r.id}')">✕ Remover imagem</button>
+        </div>`
+      :`<label class="btn-img-lbl">📎 Anexar imagem
+          <input type="file" accept="image/*" style="display:none" onchange="cfgUploadImg('${r.id}',this)"/>
+        </label>`;
+    return`
     <div class="rc" id="rc-${r.id}">
       <div class="rc-body" id="rb-${r.id}">${esc(r.body)}</div>
       <textarea class="rc-ta" id="rt-${r.id}" style="display:none">${esc(r.body)}</textarea>
+      ${imgSection}
       <div class="rc-acts">
         <button class="btn-del-r" onclick="cfgDel('${r.id}')">🗑</button>
         <button class="btn-edit-r" id="re-${r.id}" onclick="cfgEdit('${r.id}')">✏️ Editar</button>
         <button class="btn-save-r" id="rs-${r.id}" style="display:none" onclick="cfgSave('${r.id}')">✔ Salvar</button>
         <button class="btn-cancel-r" id="rc2-${r.id}" style="display:none" onclick="cfgCancelEdit('${r.id}')">✕</button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
+}
+async function cfgUploadImg(id,input){
+  const file=input.files[0];if(!file)return;
+  const fd=new FormData();fd.append('image',file);
+  toast('Enviando imagem...','var(--warn)');
+  const r=await fetch(`/api/quick-replies/${id}/image`,{method:'POST',body:fd});
+  const d=await r.json();input.value='';
+  if(d.ok){toast('✅ Imagem salva!');await cfgLoad();renderQItems();}
+  else toast('Erro: '+(d.error||'?'),'var(--danger)');
+}
+async function cfgDelImg(id){
+  if(!confirm('Remover imagem desta resposta?'))return;
+  const r=await fetch(`/api/quick-replies/${id}/image`,{method:'DELETE'});
+  if((await r.json()).ok){toast('Imagem removida');await cfgLoad();renderQItems();}
 }
 function cfgEdit(id){
   const r=quickReplies.find(x=>x.id===id);

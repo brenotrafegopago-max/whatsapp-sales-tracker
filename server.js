@@ -45,6 +45,17 @@ app.post('/webhook', async (req, res) => {
 
         const contacts = value.contacts || [];
 
+        // Status de entrega (delivered/read)
+        const statuses = value.statuses || [];
+        for (const st of statuses) {
+          if (st.status && st.id) {
+            await supabase.from('messages')
+              .update({ status: st.status })
+              .eq('wa_message_id', st.id);
+            console.log(`[Webhook] Status ${st.id} → ${st.status}`);
+          }
+        }
+
         for (const msg of messages) {
           const phone = msg.from;
           const referral = msg.referral;
@@ -121,6 +132,7 @@ app.get('/api/conversations', async (req, res) => {
     status: row.status, valor: row.valor, created_at: row.created_at,
     updated_at: row.updated_at, purchase_sent_at: row.purchase_sent_at,
     last_message_at: row.last_message_at,
+    profile_pic_url: row.profile_pic_url || null,
     lastMessage: row.last_msg_body != null ? {
       body: row.last_msg_body,
       direction: row.last_msg_direction,
@@ -187,6 +199,7 @@ app.post('/api/messages/:phone/send', async (req, res) => {
       body,
       wa_message_id: result.messages?.[0]?.id || null,
       timestamp: nowIso,
+      status: 'sent',
     });
     await supabase.from('leads').update({ last_message_at: nowIso }).eq('phone', phone);
 
@@ -275,9 +288,99 @@ app.patch('/api/leads/:id/nome', async (req, res) => {
   res.json({ ok: true });
 });
 
-// ─── API: Enviar mídia (imagem / áudio) via Cloud API ────────────────────────
-
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 16 * 1024 * 1024 } });
+
+// ─── API: Foto de perfil do contato ──────────────────────────────────────────
+
+app.get('/api/contacts/:phone/profile-photo', async (req, res) => {
+  const { phone } = req.params;
+  const { data: lead } = await supabase.from('leads').select('profile_pic_url').eq('phone', phone).single();
+  if (lead?.profile_pic_url) return res.json({ url: lead.profile_pic_url });
+
+  try {
+    const r = await fetch(
+      `https://graph.facebook.com/v25.0/${process.env.PHONE_NUMBER_ID}/contacts`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ blocking: 'wait', contacts: [`+${phone}`], force_check: false }),
+      }
+    );
+    const data = await r.json();
+    const pic = data.contacts?.[0]?.profile?.picture || null;
+    if (pic) await supabase.from('leads').update({ profile_pic_url: pic }).eq('phone', phone);
+    res.json({ url: pic });
+  } catch {
+    res.json({ url: null });
+  }
+});
+
+// ─── API: Enviar imagem por URL (quick replies com imagem) ────────────────────
+
+app.post('/api/messages/:phone/send-image-url', async (req, res) => {
+  const { phone } = req.params;
+  const { image_url, caption } = req.body;
+  if (!image_url) return res.status(400).json({ error: 'URL da imagem ausente' });
+
+  try {
+    const payload = {
+      messaging_product: 'whatsapp',
+      to: phone,
+      type: 'image',
+      image: { link: image_url, ...(caption ? { caption } : {}) },
+    };
+    const r = await fetch(`https://graph.facebook.com/v25.0/${process.env.PHONE_NUMBER_ID}/messages`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const result = await r.json();
+    if (!r.ok) return res.status(502).json({ error: result.error?.message || 'Falha ao enviar imagem' });
+
+    const nowIso = new Date().toISOString();
+    const label = caption ? `[Imagem] ${caption}` : '[Imagem]';
+    await supabase.from('messages').insert({
+      phone, direction: 'out', type: 'image', body: label,
+      wa_message_id: result.messages?.[0]?.id || null, timestamp: nowIso, status: 'sent',
+    });
+    await supabase.from('leads').update({ last_message_at: nowIso }).eq('phone', phone);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── API: Imagem nas respostas rápidas (Supabase Storage) ────────────────────
+
+app.post('/api/quick-replies/:id/image', upload.single('image'), async (req, res) => {
+  const { id } = req.params;
+  const file = req.file;
+  if (!file) return res.status(400).json({ error: 'Nenhum arquivo enviado' });
+
+  const ext = (file.originalname.split('.').pop() || 'jpg').toLowerCase();
+  const filename = `${id}-${Date.now()}.${ext}`;
+
+  const { error: upErr } = await supabase.storage
+    .from('quick-reply-images')
+    .upload(filename, file.buffer, { contentType: file.mimetype, upsert: true });
+
+  if (upErr) return res.status(500).json({ error: upErr.message });
+
+  const { data: urlData } = supabase.storage.from('quick-reply-images').getPublicUrl(filename);
+  const image_url = urlData.publicUrl;
+
+  await supabase.from('quick_replies').update({ image_url }).eq('id', id);
+  res.json({ ok: true, image_url });
+});
+
+app.delete('/api/quick-replies/:id/image', async (req, res) => {
+  const { id } = req.params;
+  const { error } = await supabase.from('quick_replies').update({ image_url: null }).eq('id', id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ ok: true });
+});
+
+// ─── API: Enviar mídia (imagem / áudio) via Cloud API ────────────────────────
 
 app.post('/api/messages/:phone/media', upload.single('file'), async (req, res) => {
   const { phone } = req.params;
