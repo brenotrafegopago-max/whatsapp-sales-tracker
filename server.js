@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
 const path = require('path');
+const multer = require('multer');
 
 const app = express();
 app.use(express.json());
@@ -80,6 +81,7 @@ app.post('/webhook', async (req, res) => {
           await supabase.from('messages').insert({
             phone,
             direction: 'in',
+            type: msg.type || 'text',
             body,
             wa_message_id: msg.id || null,
             timestamp: nowIso,
@@ -188,6 +190,7 @@ app.post('/api/messages/:phone/send', async (req, res) => {
     await supabase.from('messages').insert({
       phone,
       direction: 'out',
+      type: 'text',
       body,
       wa_message_id: result.messages?.[0]?.id || null,
       timestamp: nowIso,
@@ -264,6 +267,88 @@ app.delete('/api/quick-replies/:id', async (req, res) => {
   const { error } = await supabase.from('quick_replies').delete().eq('id', id);
   if (error) return res.status(500).json({ error: error.message });
   res.json({ ok: true });
+});
+
+// ─── API: Atualizar nome do lead ──────────────────────────────────────────────
+
+app.patch('/api/leads/:id/nome', async (req, res) => {
+  const { id } = req.params;
+  const { nome } = req.body;
+  const { error } = await supabase
+    .from('leads')
+    .update({ nome: nome?.trim() || null })
+    .eq('id', id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ ok: true });
+});
+
+// ─── API: Enviar mídia (imagem / áudio) via Cloud API ────────────────────────
+
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 16 * 1024 * 1024 } });
+
+app.post('/api/messages/:phone/media', upload.single('file'), async (req, res) => {
+  const { phone } = req.params;
+  const file = req.file;
+  if (!file) return res.status(400).json({ error: 'Nenhum arquivo enviado' });
+
+  const isAudio = file.mimetype.startsWith('audio/');
+  const isImage = file.mimetype.startsWith('image/');
+  const msgType = isImage ? 'image' : isAudio ? 'audio' : 'document';
+
+  try {
+    // 1. Upload da mídia para o WhatsApp
+    const { FormData, Blob } = await import('node:buffer').then(() => globalThis);
+    const form = new FormData();
+    form.append('messaging_product', 'whatsapp');
+    form.append('file', new Blob([file.buffer], { type: file.mimetype }), file.originalname);
+
+    const uploadRes = await fetch(
+      `https://graph.facebook.com/v25.0/${process.env.PHONE_NUMBER_ID}/media`,
+      { method: 'POST', headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}` }, body: form }
+    );
+    const uploadData = await uploadRes.json();
+    if (!uploadRes.ok) {
+      console.error('[Media Upload]', JSON.stringify(uploadData));
+      return res.status(502).json({ error: uploadData.error?.message || 'Falha no upload de mídia' });
+    }
+
+    const mediaId = uploadData.id;
+
+    // 2. Envia a mensagem com a mídia
+    const msgPayload = {
+      messaging_product: 'whatsapp',
+      to: phone,
+      type: msgType,
+      [msgType]: { id: mediaId },
+    };
+    const sendRes = await fetch(
+      `https://graph.facebook.com/v25.0/${process.env.PHONE_NUMBER_ID}/messages`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(msgPayload),
+      }
+    );
+    const sendData = await sendRes.json();
+    if (!sendRes.ok) {
+      console.error('[Media Send]', JSON.stringify(sendData));
+      return res.status(502).json({ error: sendData.error?.message || 'Falha ao enviar mídia' });
+    }
+
+    // 3. Salva no Supabase
+    const nowIso = new Date().toISOString();
+    const label = isImage ? `[Imagem: ${file.originalname}]` : isAudio ? `[Áudio: ${file.originalname}]` : `[Arquivo: ${file.originalname}]`;
+    await supabase.from('messages').insert({
+      phone, direction: 'out', type: msgType, body: label,
+      wa_message_id: sendData.messages?.[0]?.id || null, timestamp: nowIso,
+    });
+    await supabase.from('leads').update({ last_message_at: nowIso }).eq('phone', phone);
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[Media]', err.message);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ─── API: Listar Leads ────────────────────────────────────────────────────────

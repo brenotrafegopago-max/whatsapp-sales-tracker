@@ -1,125 +1,220 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>CRM — WhatsApp</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0b141a; color: #e9edef; overflow: hidden; }
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0b141a;color:#e9edef}
 
-.app { display: flex; height: 100vh; }
+/* ── Shell ── */
+.shell{display:flex;height:100vh}
 
-/* ── Sidebar ── */
-.sidebar { width: 360px; min-width: 280px; background: #111b21; border-right: 1px solid #222d34; display: flex; flex-direction: column; }
-.sidebar-header { padding: 0.85rem 1rem; border-bottom: 1px solid #222d34; display: flex; align-items: center; justify-content: space-between; }
-.sidebar-header h1 { font-size: 1rem; font-weight: 600; }
-.sidebar-header a { color: #8696a0; font-size: 0.78rem; text-decoration: none; }
-.sidebar-header a:hover { color: #e9edef; }
+/* ── Nav lateral ── */
+.side-nav{
+  width:56px;background:#111b21;
+  border-right:1px solid #222d34;
+  display:flex;flex-direction:column;align-items:center;
+  padding:0.75rem 0;gap:0.25rem;flex-shrink:0;
+}
+.nav-btn{
+  width:42px;height:42px;border-radius:10px;border:none;
+  background:none;color:#8696a0;font-size:1.25rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.15s;
+}
+.nav-btn:hover{background:#1e2d37;color:#e9edef}
+.nav-btn.active{background:#00a884;color:#000}
+.nav-btn title{display:none}
 
-.search-box { padding: 0.5rem 0.75rem; }
-.search-box input { width: 100%; background: #202c33; border: none; color: #e9edef; padding: 0.45rem 0.85rem; border-radius: 8px; font-size: 0.85rem; outline: none; }
-.search-box input::placeholder { color: #8696a0; }
+/* ── Views ── */
+.view{display:none;flex:1;overflow:hidden;height:100%}
+.view.active{display:flex}
 
-/* Filtros de status */
-.status-filters { display: flex; gap: 0; border-bottom: 1px solid #222d34; overflow-x: auto; }
-.status-filters::-webkit-scrollbar { display: none; }
-.sf-btn { flex: 1; background: none; border: none; color: #8696a0; font-size: 0.72rem; padding: 0.55rem 0.3rem; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: all 0.15s; min-width: 60px; }
-.sf-btn:hover { color: #e9edef; }
-.sf-btn.active { color: #00a884; border-bottom-color: #00a884; font-weight: 600; }
-.sf-badge { display: inline-block; background: #2a3942; border-radius: 99px; padding: 0 5px; font-size: 0.65rem; margin-left: 3px; min-width: 16px; text-align: center; }
-.sf-btn.active .sf-badge { background: #00a884; color: #000; }
+/* ══════════════════════════════════════════════════
+   VIEW: CRM (chat)
+══════════════════════════════════════════════════ */
+.crm-layout{display:flex;width:100%;height:100%}
 
-.conv-list { flex: 1; overflow-y: auto; }
+/* Sidebar conversas */
+.sidebar{width:340px;min-width:260px;background:#111b21;border-right:1px solid #222d34;display:flex;flex-direction:column}
+.sidebar-header{padding:0.8rem 0.9rem;border-bottom:1px solid #222d34}
+.sidebar-header h2{font-size:0.95rem;font-weight:600;margin-bottom:0.55rem}
+.search-input{width:100%;background:#202c33;border:none;color:#e9edef;padding:0.42rem 0.8rem;border-radius:8px;font-size:0.84rem;outline:none}
+.search-input::placeholder{color:#8696a0}
 
-/* ── Item de conversa ── */
-.conv-item { display: flex; align-items: center; gap: 0.7rem; padding: 0.65rem 0.9rem; cursor: pointer; border-bottom: 1px solid #1a2329; transition: background 0.1s; position: relative; }
-.conv-item:hover { background: #182229; }
-.conv-item.active { background: #2a3942; }
-.avatar { width: 44px; height: 44px; border-radius: 50%; background: #2a3942; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1rem; color: #8696a0; flex-shrink: 0; position: relative; }
-.new-dot { position: absolute; top: 1px; right: 1px; width: 10px; height: 10px; background: #00a884; border-radius: 50%; border: 2px solid #111b21; animation: pulse 1.4s ease-in-out infinite; }
-@keyframes pulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.35); opacity: 0.7; } }
-.conv-info { flex: 1; min-width: 0; }
-.conv-top { display: flex; justify-content: space-between; align-items: baseline; }
-.conv-name { font-size: 0.9rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
-.conv-time { font-size: 0.7rem; color: #8696a0; flex-shrink: 0; }
-.conv-bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 0.15rem; }
-.conv-preview { font-size: 0.79rem; color: #8696a0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 230px; }
-.status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-.status-dot.novo,.status-dot.lead { background: #60a5fa; }
-.status-dot.em_atendimento { background: #fbbf24; }
-.status-dot.comprou { background: #4ade80; }
-.status-dot.nao_comprou { background: #f87171; }
+.status-filters{display:flex;border-bottom:1px solid #222d34;overflow-x:auto}
+.status-filters::-webkit-scrollbar{display:none}
+.sf-btn{flex:1;background:none;border:none;color:#8696a0;font-size:0.68rem;padding:0.5rem 0.2rem;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all 0.15s;min-width:55px}
+.sf-btn:hover{color:#e9edef}
+.sf-btn.active{color:#00a884;border-bottom-color:#00a884;font-weight:600}
+.sf-badge{display:inline-block;background:#2a3942;border-radius:99px;padding:0 4px;font-size:0.62rem;margin-left:2px}
+.sf-btn.active .sf-badge{background:#00a884;color:#000}
 
-.empty-list { padding: 2rem 1rem; color: #5a6b73; text-align: center; font-size: 0.85rem; }
+.conv-list{flex:1;overflow-y:auto}
+.conv-item{display:flex;align-items:center;gap:0.65rem;padding:0.6rem 0.85rem;cursor:pointer;border-bottom:1px solid #1a2329;transition:background 0.1s;position:relative}
+.conv-item:hover{background:#182229}
+.conv-item.active{background:#2a3942}
+.avatar{width:42px;height:42px;border-radius:50%;background:#2a3942;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.95rem;color:#8696a0;flex-shrink:0;position:relative}
+.new-dot{position:absolute;top:1px;right:1px;width:9px;height:9px;background:#00a884;border-radius:50%;border:2px solid #111b21;animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.4);opacity:.7}}
+.conv-info{flex:1;min-width:0}
+.conv-top{display:flex;justify-content:space-between;align-items:baseline}
+.conv-name{font-size:0.88rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:170px}
+.conv-time{font-size:0.68rem;color:#8696a0;flex-shrink:0}
+.conv-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:.12rem}
+.conv-preview{font-size:0.77rem;color:#8696a0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+.sdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.sdot.novo,.sdot.lead{background:#60a5fa}
+.sdot.em_atendimento{background:#fbbf24}
+.sdot.comprou{background:#4ade80}
+.sdot.nao_comprou{background:#f87171}
+.empty-list{padding:2rem 1rem;color:#5a6b73;text-align:center;font-size:0.85rem}
 
-/* ── Chat area ── */
-.chat-area { flex: 1; display: flex; flex-direction: column; background: #0b141a; position: relative; }
-.chat-empty { flex: 1; display: flex; align-items: center; justify-content: center; color: #5a6b73; font-size: 0.95rem; flex-direction: column; gap: 0.5rem; }
+/* Chat area */
+.chat-area{flex:1;display:flex;flex-direction:column;background:#0b141a;min-width:0}
+.chat-empty{flex:1;display:flex;align-items:center;justify-content:center;color:#5a6b73;flex-direction:column;gap:.5rem;font-size:.95rem}
 
-/* Header do chat */
-.chat-header { background: #202c33; padding: 0.65rem 1rem; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; border-bottom: 1px solid #222d34; flex-shrink: 0; }
-.chat-header-left { display: flex; align-items: center; gap: 0.7rem; min-width: 0; }
-.chat-header-name { font-size: 0.93rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
-.chat-header-phone { font-size: 0.72rem; color: #8696a0; }
-.chat-header-right { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+/* Chat header */
+.chat-hdr{background:#202c33;padding:.6rem .9rem;border-bottom:1px solid #222d34;flex-shrink:0}
+.chat-hdr-row1{display:flex;align-items:center;gap:.65rem}
+.chat-hdr-right{display:flex;align-items:center;gap:.45rem;margin-left:auto;flex-shrink:0}
+.status-select{background:#2a3942;color:#e9edef;border:none;padding:.3rem .55rem;border-radius:6px;font-size:.76rem;cursor:pointer;outline:none}
+.status-select option{background:#111b21}
+.btn-sale{background:#fbbf24;color:#000;border:none;padding:.3rem .65rem;border-radius:6px;font-size:.76rem;font-weight:700;cursor:pointer;white-space:nowrap}
+.btn-sale:hover{opacity:.85}
+.back-btn{display:none;background:none;border:none;color:#e9edef;font-size:1.25rem;cursor:pointer;flex-shrink:0}
 
-.status-select { background: #2a3942; color: #e9edef; border: none; padding: 0.35rem 0.6rem; border-radius: 6px; font-size: 0.78rem; cursor: pointer; outline: none; }
-.status-select option { background: #111b21; }
+/* Editable name */
+.name-edit-wrap{display:flex;align-items:center;gap:.4rem;min-width:0}
+.name-display{font-size:.93rem;font-weight:600;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+.name-display:hover{text-decoration:underline dotted #8696a0}
+.name-input{background:#2a3942;border:1px solid #00a884;color:#e9edef;padding:.25rem .55rem;border-radius:6px;font-size:.9rem;outline:none;width:180px}
+.chat-hdr-sub{font-size:.72rem;color:#8696a0;margin-top:.18rem;padding-left:50px}
 
-.btn-sale { background: #fbbf24; color: #000; border: none; padding: 0.35rem 0.7rem; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer; white-space: nowrap; transition: opacity 0.15s; }
-.btn-sale:hover { opacity: 0.85; }
+/* Sale bar */
+.sale-bar{background:#1a2329;border-bottom:1px solid #222d34;padding:.55rem .9rem;display:flex;align-items:center;gap:.6rem;flex-shrink:0}
+.sale-bar label{font-size:.78rem;color:#8696a0;white-space:nowrap}
+.sale-input{background:#202c33;border:1px solid #2a3942;color:#e9edef;padding:.4rem .7rem;border-radius:7px;font-size:.86rem;outline:none;width:140px}
+.sale-input:focus{border-color:#fbbf24}
+.btn-sale-confirm{background:#4ade80;color:#000;border:none;padding:.4rem .9rem;border-radius:7px;font-weight:700;font-size:.8rem;cursor:pointer}
+.btn-sale-confirm:disabled{opacity:.5;cursor:not-allowed}
+.btn-sale-cancel{background:none;border:1px solid #2a3942;color:#8696a0;padding:.4rem .65rem;border-radius:7px;font-size:.8rem;cursor:pointer}
 
-/* Sale inline form */
-.sale-bar { background: #1a2329; border-top: 1px solid #222d34; padding: 0.6rem 1rem; display: flex; align-items: center; gap: 0.6rem; flex-shrink: 0; }
-.sale-bar input { flex: 1; background: #202c33; border: 1px solid #2a3942; color: #e9edef; padding: 0.45rem 0.75rem; border-radius: 7px; font-size: 0.88rem; outline: none; max-width: 180px; }
-.sale-bar input:focus { border-color: #fbbf24; }
-.sale-bar label { font-size: 0.8rem; color: #8696a0; white-space: nowrap; }
-.btn-sale-confirm { background: #4ade80; color: #000; border: none; padding: 0.45rem 1rem; border-radius: 7px; font-weight: 700; font-size: 0.82rem; cursor: pointer; }
-.btn-sale-confirm:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn-sale-cancel { background: none; border: 1px solid #2a3942; color: #8696a0; padding: 0.45rem 0.7rem; border-radius: 7px; font-size: 0.82rem; cursor: pointer; }
-
-/* Mensagens */
-.messages { flex: 1; overflow-y: auto; padding: 1rem 4%; display: flex; flex-direction: column; gap: 0.3rem; }
-.bubble { max-width: 65%; padding: 0.5rem 0.75rem; border-radius: 8px; font-size: 0.87rem; line-height: 1.38; word-wrap: break-word; }
-.bubble.in { align-self: flex-start; background: #202c33; border-top-left-radius: 2px; }
-.bubble.out { align-self: flex-end; background: #005c4b; border-top-right-radius: 2px; }
-.bubble .time { display: block; text-align: right; font-size: 0.63rem; color: #8696a0; margin-top: 0.25rem; }
+/* Messages */
+.messages{flex:1;overflow-y:auto;padding:.9rem 4%;display:flex;flex-direction:column;gap:.3rem}
+.bubble{max-width:65%;padding:.48rem .7rem;border-radius:8px;font-size:.86rem;line-height:1.38;word-wrap:break-word}
+.bubble.in{align-self:flex-start;background:#202c33;border-top-left-radius:2px}
+.bubble.out{align-self:flex-end;background:#005c4b;border-top-right-radius:2px}
+.bubble .time{display:block;text-align:right;font-size:.62rem;color:#8696a0;margin-top:.22rem}
+.bubble.media-bubble{font-style:italic;color:#aaa}
+.bubble .media-icon{font-size:1.1rem;margin-right:.3rem}
 
 /* Composer */
-.composer { background: #202c33; padding: 0.6rem 0.9rem; display: flex; gap: 0.6rem; align-items: center; flex-shrink: 0; position: relative; }
-.composer input { flex: 1; background: #2a3942; border: none; color: #e9edef; padding: 0.6rem 1rem; border-radius: 8px; font-size: 0.88rem; outline: none; }
-.composer input::placeholder { color: #8696a0; }
-.btn-quick { background: #2a3942; border: none; width: 38px; height: 38px; border-radius: 50%; color: #e9edef; font-size: 1rem; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
-.btn-quick:hover { background: #374951; }
-.btn-send { background: #00a884; border: none; width: 40px; height: 40px; border-radius: 50%; color: #0b141a; font-size: 1.1rem; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-.btn-send:disabled { opacity: 0.45; cursor: not-allowed; }
+.composer{background:#202c33;padding:.55rem .85rem;display:flex;gap:.5rem;align-items:center;flex-shrink:0;position:relative}
+.composer-input{flex:1;background:#2a3942;border:none;color:#e9edef;padding:.55rem .9rem;border-radius:8px;font-size:.87rem;outline:none}
+.composer-input::placeholder{color:#8696a0}
+.btn-icon{background:#2a3942;border:none;width:36px;height:36px;border-radius:50%;color:#e9edef;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s}
+.btn-icon:hover{background:#374951}
+.btn-send{background:#00a884;border:none;width:38px;height:38px;border-radius:50%;color:#0b141a;font-size:1.05rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.btn-send:disabled{opacity:.45;cursor:not-allowed}
+input[type=file].file-input{display:none}
 
-/* Quick replies menu */
-.quick-menu { position: absolute; bottom: 62px; left: 0; right: 0; background: #1f2c34; border-top: 1px solid #2a3942; border-radius: 10px 10px 0 0; max-height: 260px; overflow-y: auto; z-index: 20; box-shadow: 0 -4px 16px rgba(0,0,0,0.4); }
-.quick-menu.hidden { display: none; }
-.quick-menu-header { padding: 0.5rem 1rem; font-size: 0.72rem; color: #8696a0; border-bottom: 1px solid #2a3942; display: flex; justify-content: space-between; align-items: center; }
-.quick-menu-header a { color: #00a884; font-size: 0.72rem; text-decoration: none; }
-.quick-item { padding: 0.65rem 1rem; cursor: pointer; font-size: 0.87rem; border-bottom: 1px solid #1a2329; transition: background 0.1s; }
-.quick-item:hover { background: #2a3942; }
-.quick-item:last-child { border-bottom: none; }
+/* Quick menu */
+.quick-menu{position:absolute;bottom:58px;left:0;right:0;background:#1f2c34;border-top:1px solid #2a3942;border-radius:10px 10px 0 0;max-height:240px;overflow-y:auto;z-index:20;box-shadow:0 -4px 16px rgba(0,0,0,.4)}
+.quick-menu.hidden{display:none}
+.qm-header{padding:.45rem .9rem;font-size:.7rem;color:#8696a0;border-bottom:1px solid #2a3942;display:flex;justify-content:space-between}
+.qm-header span{cursor:pointer;color:#00a884}
+.quick-item{padding:.6rem .9rem;cursor:pointer;font-size:.85rem;border-bottom:1px solid #1a2329;transition:background .1s}
+.quick-item:hover{background:#2a3942}
+.quick-item:last-child{border-bottom:none}
 
-/* Back button (mobile) */
-.back-btn { display: none; background: none; border: none; color: #e9edef; font-size: 1.3rem; cursor: pointer; padding: 0 0.3rem; flex-shrink: 0; }
+/* ══════════════════════════════════════════════════
+   VIEW: DASHBOARD
+══════════════════════════════════════════════════ */
+.dash-view{flex:1;overflow-y:auto;background:#0f0f0f;padding:0}
+.dash-inner{max-width:900px;margin:0 auto;padding:1.25rem 1rem}
+.dash-title{font-size:1rem;font-weight:600;margin-bottom:1.1rem;color:#e5e5e5}
+.stats{display:flex;gap:.85rem;flex-wrap:wrap;margin-bottom:1.5rem}
+.stat-card{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;padding:.9rem 1.2rem;flex:1;min-width:110px}
+.stat-card .lbl{font-size:.72rem;color:#888;margin-bottom:.25rem}
+.stat-card .val{font-size:1.5rem;font-weight:700}
+.stat-card.blue .val{color:#60a5fa}
+.stat-card.green .val{color:#4ade80}
+.stat-card.yellow .val{color:#fbbf24}
 
-/* Notif toast */
-.toast { position: fixed; top: 1rem; right: 1rem; background: #00a884; color: #000; padding: 0.65rem 1.1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; z-index: 999; opacity: 0; transform: translateY(-10px); transition: all 0.25s; pointer-events: none; }
-.toast.show { opacity: 1; transform: translateY(0); }
+.dash-filters{display:flex;gap:.45rem;margin-bottom:.85rem}
+.df-btn{background:#1a1a1a;border:1px solid #2a2a2a;color:#aaa;padding:.35rem .85rem;border-radius:6px;cursor:pointer;font-size:.82rem;transition:all .15s}
+.df-btn.active{background:#25d366;border-color:#25d366;color:#000;font-weight:600}
 
-/* Mobile */
-@media (max-width: 768px) {
-  .sidebar { width: 100%; min-width: 0; }
-  .chat-area { display: none; }
-  .app.chat-open .sidebar { display: none; }
-  .app.chat-open .chat-area { display: flex; }
-  .back-btn { display: flex !important; }
-  .bubble { max-width: 82%; }
+table{width:100%;border-collapse:collapse;font-size:.87rem}
+thead th{text-align:left;padding:.55rem .7rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:#666;border-bottom:1px solid #2a2a2a}
+tbody tr{border-bottom:1px solid #1e1e1e;transition:background .1s}
+tbody tr:hover{background:#1a1a1a}
+tbody td{padding:.7rem .7rem;vertical-align:middle}
+.badge{display:inline-block;padding:.18rem .55rem;border-radius:999px;font-size:.72rem;font-weight:600}
+.badge.lead,.badge.novo{background:#1e3a5f;color:#60a5fa}
+.badge.comprou{background:#14532d;color:#4ade80}
+.badge.em_atendimento{background:#422006;color:#fbbf24}
+.badge.nao_comprou{background:#450a0a;color:#f87171}
+.clid-chip{font-size:.7rem;font-family:monospace;background:#1e1e1e;padding:.12rem .35rem;border-radius:4px;color:#aaa;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block}
+.btn-venda-dash{background:#25d366;color:#000;border:none;padding:.3rem .8rem;border-radius:6px;cursor:pointer;font-weight:600;font-size:.79rem}
+.btn-venda-dash:hover{opacity:.85}
+.sent-lbl{color:#4ade80;font-size:.76rem}
+
+/* Modal dashboard */
+.modal-bd{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center}
+.modal-bd.open{display:flex}
+.modal{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:14px;padding:1.6rem;width:340px;max-width:95vw}
+.modal h3{font-size:.95rem;margin-bottom:1.1rem}
+.modal label{font-size:.8rem;color:#999;display:block;margin-bottom:.28rem}
+.modal input{width:100%;background:#111;border:1px solid #333;color:#e5e5e5;padding:.55rem .7rem;border-radius:8px;font-size:.92rem;margin-bottom:.9rem;outline:none}
+.modal input:focus{border-color:#25d366}
+.modal-acts{display:flex;gap:.7rem;justify-content:flex-end}
+.btn-cancel-m{background:transparent;border:1px solid #333;color:#aaa;padding:.45rem 1rem;border-radius:7px;cursor:pointer}
+.btn-confirm-m{background:#25d366;border:none;color:#000;padding:.45rem 1.2rem;border-radius:7px;cursor:pointer;font-weight:700}
+.btn-confirm-m:disabled{opacity:.5;cursor:not-allowed}
+
+/* ══════════════════════════════════════════════════
+   VIEW: CONFIG (respostas rápidas)
+══════════════════════════════════════════════════ */
+.cfg-view{flex:1;overflow-y:auto;background:#0b141a;padding:1.25rem 1rem}
+.cfg-inner{max-width:660px;margin:0 auto}
+.cfg-title{font-size:.95rem;font-weight:600;margin-bottom:1.1rem}
+.add-box{background:#111b21;border:1px solid #222d34;border-radius:12px;padding:1.1rem;margin-bottom:1.3rem}
+.add-box h4{font-size:.82rem;color:#8696a0;margin-bottom:.65rem}
+.add-box textarea{width:100%;background:#0b141a;border:1px solid #2a3942;color:#e9edef;padding:.6rem .8rem;border-radius:8px;font-size:.88rem;resize:vertical;min-height:72px;outline:none;font-family:inherit}
+.add-box textarea:focus{border-color:#00a884}
+.add-box button{margin-top:.5rem;background:#00a884;color:#000;border:none;padding:.45rem 1.1rem;border-radius:7px;font-weight:700;font-size:.85rem;cursor:pointer}
+.add-box button:disabled{opacity:.5;cursor:not-allowed}
+.replies-list{display:flex;flex-direction:column;gap:.65rem}
+.reply-card{background:#111b21;border:1px solid #222d34;border-radius:10px;padding:.9rem 1rem}
+.reply-card.editing{border-color:#00a884}
+.reply-body-txt{font-size:.88rem;line-height:1.42;white-space:pre-wrap;word-break:break-word}
+.reply-ta{width:100%;background:#0b141a;border:1px solid #2a3942;color:#e9edef;padding:.55rem .75rem;border-radius:7px;font-size:.86rem;resize:vertical;min-height:64px;outline:none;font-family:inherit}
+.reply-ta:focus{border-color:#00a884}
+.reply-acts{display:flex;gap:.45rem;margin-top:.6rem;justify-content:flex-end}
+.btn-edit-r{background:#2a3942;border:none;color:#e9edef;padding:.3rem .75rem;border-radius:6px;font-size:.77rem;cursor:pointer}
+.btn-save-r{background:#00a884;border:none;color:#000;padding:.3rem .75rem;border-radius:6px;font-size:.77rem;font-weight:700;cursor:pointer}
+.btn-del-r{background:none;border:1px solid #f87171;color:#f87171;padding:.3rem .7rem;border-radius:6px;font-size:.77rem;cursor:pointer}
+.btn-del-r:hover{background:#f87171;color:#000}
+.btn-cancel-r{background:none;border:1px solid #2a3942;color:#8696a0;padding:.3rem .65rem;border-radius:6px;font-size:.77rem;cursor:pointer}
+
+/* ── Toast ── */
+.toast{position:fixed;top:1rem;right:1rem;background:#00a884;color:#000;padding:.6rem 1rem;border-radius:8px;font-size:.83rem;font-weight:600;z-index:999;opacity:0;transform:translateY(-8px);transition:all .22s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* ── Mobile ── */
+@media(max-width:768px){
+  .sidebar{width:100%;min-width:0}
+  .chat-area{display:none}
+  .crm-layout.chat-open .sidebar{display:none}
+  .crm-layout.chat-open .chat-area{display:flex}
+  .back-btn{display:flex!important}
+  .bubble{max-width:82%}
+  .side-nav{width:48px}
 }
 </style>
 </head>
@@ -127,446 +222,574 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 
 <div class="toast" id="toast"></div>
 
-<div class="app" id="app">
-
-  <!-- SIDEBAR -->
-  <div class="sidebar">
-    <div class="sidebar-header">
-      <h1>💬 Atendimento</h1>
-      <a href="/crm/config">⚙️ Respostas rápidas</a>
-    </div>
-
-    <div class="search-box">
-      <input type="text" id="search" placeholder="Buscar conversa..." />
-    </div>
-
-    <!-- Filtros por status -->
-    <div class="status-filters">
-      <button class="sf-btn active" data-filter="todos">Todos<span class="sf-badge" id="cnt-todos">0</span></button>
-      <button class="sf-btn" data-filter="novo,lead">Novos<span class="sf-badge" id="cnt-novo">0</span></button>
-      <button class="sf-btn" data-filter="em_atendimento">Atendendo<span class="sf-badge" id="cnt-em">0</span></button>
-      <button class="sf-btn" data-filter="comprou">Compraram<span class="sf-badge" id="cnt-comprou">0</span></button>
-    </div>
-
-    <div class="conv-list" id="conv-list">
-      <div class="empty-list">Carregando...</div>
+<!-- Modal venda (dashboard) -->
+<div class="modal-bd" id="dash-modal">
+  <div class="modal">
+    <h3>✅ Registrar Venda</h3>
+    <label>Nome do cliente (opcional)</label>
+    <input type="text" id="dm-nome" placeholder="Ex: João Silva"/>
+    <label>Valor da venda (R$)</label>
+    <input type="number" id="dm-valor" placeholder="Ex: 297.00" step="0.01" min="0"/>
+    <div class="modal-acts">
+      <button class="btn-cancel-m" onclick="closeDashModal()">Cancelar</button>
+      <button class="btn-confirm-m" id="dm-confirm" onclick="confirmDashSale()">Confirmar</button>
     </div>
   </div>
-
-  <!-- CHAT AREA -->
-  <div class="chat-area" id="chat-area">
-    <div class="chat-empty" id="chat-empty">
-      <div style="font-size:2.5rem">💬</div>
-      <div>Selecione uma conversa</div>
-    </div>
-  </div>
-
 </div>
 
+<div class="shell">
+
+  <!-- ── Nav lateral ── -->
+  <nav class="side-nav">
+    <button class="nav-btn active" data-view="crm" onclick="switchView('crm')" title="Atendimento">💬</button>
+    <button class="nav-btn" data-view="dashboard" onclick="switchView('dashboard')" title="Dashboard">📊</button>
+    <button class="nav-btn" data-view="config" onclick="switchView('config')" title="Respostas Rápidas">⚡</button>
+  </nav>
+
+  <!-- ══ VIEW: CRM ══ -->
+  <div class="view active" id="view-crm">
+    <div class="crm-layout" id="crm-layout">
+
+      <div class="sidebar">
+        <div class="sidebar-header">
+          <h2>💬 Atendimento</h2>
+          <input class="search-input" id="search" placeholder="Buscar por nome ou número..."/>
+        </div>
+        <div class="status-filters">
+          <button class="sf-btn active" data-filter="todos">Todos<span class="sf-badge" id="cnt-todos">0</span></button>
+          <button class="sf-btn" data-filter="novo,lead">Novos<span class="sf-badge" id="cnt-novo">0</span></button>
+          <button class="sf-btn" data-filter="em_atendimento">Atend.<span class="sf-badge" id="cnt-em">0</span></button>
+          <button class="sf-btn" data-filter="comprou">Comprou<span class="sf-badge" id="cnt-buy">0</span></button>
+        </div>
+        <div class="conv-list" id="conv-list"><div class="empty-list">Carregando...</div></div>
+      </div>
+
+      <div class="chat-area" id="chat-area">
+        <div class="chat-empty"><div style="font-size:2.5rem">💬</div><div>Selecione uma conversa</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ VIEW: DASHBOARD ══ -->
+  <div class="view" id="view-dashboard">
+    <div class="dash-view">
+      <div class="dash-inner">
+        <div class="dash-title">📊 Dashboard de Vendas</div>
+        <div class="stats">
+          <div class="stat-card blue"><div class="lbl">Total Leads</div><div class="val" id="d-total">—</div></div>
+          <div class="stat-card green"><div class="lbl">Vendas</div><div class="val" id="d-vendas">—</div></div>
+          <div class="stat-card yellow"><div class="lbl">Receita</div><div class="val" id="d-receita">—</div></div>
+          <div class="stat-card green"><div class="lbl">Conversão</div><div class="val" id="d-conv">—</div></div>
+        </div>
+        <div class="dash-filters">
+          <button class="df-btn active" data-dfilter="todos">Todos</button>
+          <button class="df-btn" data-dfilter="lead,novo">Leads</button>
+          <button class="df-btn" data-dfilter="comprou">Compras</button>
+        </div>
+        <table>
+          <thead><tr><th>Telefone</th><th>Nome</th><th>Status</th><th>CLID</th><th>Valor</th><th>Data</th><th>Ação</th></tr></thead>
+          <tbody id="dash-tbody"><tr><td colspan="7" class="empty-list">Carregando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ VIEW: CONFIG ══ -->
+  <div class="view" id="view-config">
+    <div class="cfg-view">
+      <div class="cfg-inner">
+        <div class="cfg-title">⚡ Respostas Rápidas</div>
+        <div class="add-box">
+          <h4>NOVA RESPOSTA</h4>
+          <textarea id="cfg-new-body" placeholder="Digite o texto..."></textarea>
+          <button id="cfg-add-btn" onclick="cfgAdd()">+ Adicionar</button>
+        </div>
+        <div class="replies-list" id="replies-list"><div class="empty-list">Carregando...</div></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- .shell -->
+
 <script>
-let conversations = [];
-let currentPhone = null;
-let currentLead  = null;
-let currentFilter = 'todos';
-let quickReplies  = [];
-let lastMsgCount  = {};  // phone → count, para detectar novas mensagens
-let saleBarOpen   = false;
+// ══════════════════════════════════════════════════════
+// GLOBALS
+// ══════════════════════════════════════════════════════
+let conversations = [], currentPhone = null, currentLead = null;
+let currentFilter = 'todos', dashFilter = 'todos';
+let quickReplies = [], dashLeads = [];
+let lastMsgTs = {};   // phone → last msg timestamp (ms)
+let saleBarOpen = false;
+let editingName = false;
+let _audioCtx = null;
 
-// ── Utilitários ──────────────────────────────────────────────────────────────
-
-const STATUS_LABELS = { novo:'Novo', lead:'Novo', em_atendimento:'Em atendimento', comprou:'Comprou', nao_comprou:'Não comprou' };
-
-function initials(name, phone) {
-  if (name) return name.trim().slice(0,2).toUpperCase();
-  return phone.slice(-2);
+// ══════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════
+function esc(s){ const d=document.createElement('div');d.textContent=s;return d.innerHTML }
+function timeAgo(iso){
+  if(!iso)return '';
+  const d=new Date(iso),now=new Date();
+  if(d.toDateString()===now.toDateString()) return d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
 }
-
-function timeAgo(iso) {
-  if (!iso) return '';
-  const d = new Date(iso), now = new Date();
-  if (d.toDateString() === now.toDateString())
-    return d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-  return d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'});
+function initials(name,phone){
+  if(name)return name.trim().slice(0,2).toUpperCase();
+  return (phone||'??').slice(-2);
 }
-
-function escHtml(str) {
-  const d = document.createElement('div');
-  d.textContent = str;
-  return d.innerHTML;
-}
-
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
+function toast(msg,color='#00a884'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.style.background=color;
   t.classList.add('show');
-  clearTimeout(t._tid);
-  t._tid = setTimeout(() => t.classList.remove('show'), 3000);
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),3000);
+}
+function beep(){
+  try{
+    if(!_audioCtx)_audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    const o=_audioCtx.createOscillator(),g=_audioCtx.createGain();
+    o.connect(g);g.connect(_audioCtx.destination);
+    o.frequency.value=880;o.type='sine';
+    g.gain.setValueAtTime(.12,_audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,_audioCtx.currentTime+.25);
+    o.start();o.stop(_audioCtx.currentTime+.25);
+  }catch{}
 }
 
-// ── Conversas ────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════
+// NAV
+// ══════════════════════════════════════════════════════
+function switchView(view){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('view-'+view).classList.add('active');
+  document.querySelector(`.nav-btn[data-view="${view}"]`).classList.add('active');
+  if(view==='dashboard') loadDashboard();
+  if(view==='config') cfgLoad();
+}
 
-async function loadConversations(silent = false) {
-  const res = await fetch('/api/conversations');
-  const fresh = await res.json();
-
-  // Detecta novas mensagens em conversas não abertas
-  if (!silent) {
-    fresh.forEach(c => {
-      const prev = lastMsgCount[c.phone];
-      const curr = c.lastMessage ? new Date(c.lastMessage.timestamp).getTime() : 0;
-      if (prev !== undefined && curr > prev && c.phone !== currentPhone) {
-        showToast(`💬 Nova mensagem de ${c.nome || c.phone}`);
-        playBeep();
+// ══════════════════════════════════════════════════════
+// CRM — Conversas
+// ══════════════════════════════════════════════════════
+async function loadConversations(silent=false){
+  const res=await fetch('/api/conversations');
+  const fresh=await res.json();
+  if(!silent){
+    fresh.forEach(c=>{
+      const prev=lastMsgTs[c.phone];
+      const curr=c.lastMessage?new Date(c.lastMessage.timestamp).getTime():0;
+      if(prev!==undefined && curr>prev && c.phone!==currentPhone){
+        toast(`💬 Nova msg de ${c.nome||c.phone}`); beep();
       }
-      lastMsgCount[c.phone] = curr;
+      lastMsgTs[c.phone]=curr;
     });
   } else {
-    // primeira carga: só inicializa o mapa sem notificar
-    fresh.forEach(c => {
-      lastMsgCount[c.phone] = c.lastMessage ? new Date(c.lastMessage.timestamp).getTime() : 0;
-    });
+    fresh.forEach(c=>{ lastMsgTs[c.phone]=c.lastMessage?new Date(c.lastMessage.timestamp).getTime():0; });
   }
-
-  conversations = fresh;
-  updateCounts();
-  renderConvList();
+  conversations=fresh;
+  updateCounts(); renderConvList();
 }
 
-function updateCounts() {
-  const q = (document.getElementById('search').value || '').toLowerCase();
-  const all = conversations.filter(c =>
-    (c.nome || '').toLowerCase().includes(q) || c.phone.includes(q));
-
-  document.getElementById('cnt-todos').textContent   = all.length;
-  document.getElementById('cnt-novo').textContent    = all.filter(c => c.status === 'novo' || c.status === 'lead').length;
-  document.getElementById('cnt-em').textContent      = all.filter(c => c.status === 'em_atendimento').length;
-  document.getElementById('cnt-comprou').textContent = all.filter(c => c.status === 'comprou').length;
+function updateCounts(){
+  const q=searchVal();
+  const vis=conversations.filter(c=>(c.nome||'').toLowerCase().includes(q)||c.phone.includes(q));
+  document.getElementById('cnt-todos').textContent=vis.length;
+  document.getElementById('cnt-novo').textContent=vis.filter(c=>c.status==='novo'||c.status==='lead').length;
+  document.getElementById('cnt-em').textContent=vis.filter(c=>c.status==='em_atendimento').length;
+  document.getElementById('cnt-buy').textContent=vis.filter(c=>c.status==='comprou').length;
 }
 
-function filterConv(list) {
-  if (currentFilter === 'todos') return list;
-  const vals = currentFilter.split(',');
-  return list.filter(c => vals.includes(c.status));
+function searchVal(){ return (document.getElementById('search').value||'').toLowerCase().trim(); }
+
+function filterConv(list){
+  if(currentFilter==='todos')return list;
+  const vals=currentFilter.split(',');
+  return list.filter(c=>vals.includes(c.status));
 }
 
-function renderConvList() {
-  const q = (document.getElementById('search').value || '').toLowerCase();
-  const list = document.getElementById('conv-list');
-  const filtered = filterConv(
-    conversations.filter(c =>
-      (c.nome || '').toLowerCase().includes(q) || c.phone.includes(q))
+function renderConvList(){
+  const q=searchVal();
+  const list=document.getElementById('conv-list');
+  const filtered=filterConv(
+    conversations.filter(c=>(c.nome||'').toLowerCase().includes(q)||c.phone.includes(q))
   );
-
-  if (!filtered.length) {
-    list.innerHTML = '<div class="empty-list">Nenhuma conversa</div>';
-    return;
-  }
-
-  list.innerHTML = filtered.map(c => {
-    const sk = c.status || 'novo';
-    const preview = c.lastMessage
-      ? (c.lastMessage.direction === 'out' ? 'Você: ' : '') + escHtml(c.lastMessage.body || '')
-      : 'Sem mensagens';
-    const active = c.phone === currentPhone ? 'active' : '';
-    // ponto pulsando se tem mensagem nova e não é a conversa aberta
-    const isNew = c.phone !== currentPhone && c.lastMessage?.direction === 'in'
-      && c.status === 'novo';
-    return `<div class="conv-item ${active}" onclick="openConversation('${c.phone}')">
-      <div class="avatar">${initials(c.nome, c.phone)}${isNew ? '<div class="new-dot"></div>' : ''}</div>
+  if(!filtered.length){list.innerHTML='<div class="empty-list">Nenhuma conversa</div>';return;}
+  list.innerHTML=filtered.map(c=>{
+    const sk=c.status||'novo';
+    const preview=c.lastMessage?(c.lastMessage.direction==='out'?'Você: ':'')+esc(c.lastMessage.body||''):'Sem mensagens';
+    const isNew=c.phone!==currentPhone&&c.lastMessage?.direction==='in'&&(sk==='novo'||sk==='lead');
+    return `<div class="conv-item${c.phone===currentPhone?' active':''}" onclick="openConv('${c.phone}')">
+      <div class="avatar">${esc(initials(c.nome,c.phone))}${isNew?'<div class="new-dot"></div>':''}</div>
       <div class="conv-info">
-        <div class="conv-top">
-          <span class="conv-name">${escHtml(c.nome || c.phone)}</span>
-          <span class="conv-time">${timeAgo(c.last_message_at || c.created_at)}</span>
-        </div>
-        <div class="conv-bottom">
-          <span class="conv-preview">${preview}</span>
-          <span class="status-dot ${sk}"></span>
-        </div>
-      </div>
-    </div>`;
+        <div class="conv-top"><span class="conv-name">${esc(c.nome||c.phone)}</span><span class="conv-time">${timeAgo(c.last_message_at||c.created_at)}</span></div>
+        <div class="conv-bottom"><span class="conv-preview">${preview}</span><span class="sdot ${sk}"></span></div>
+      </div></div>`;
   }).join('');
 }
 
-// ── Chat ─────────────────────────────────────────────────────────────────────
-
-async function openConversation(phone) {
-  currentPhone = phone;
-  currentLead  = conversations.find(c => c.phone === phone);
-  saleBarOpen  = false;
-  document.getElementById('app').classList.add('chat-open');
+// ══════════════════════════════════════════════════════
+// CRM — Chat
+// ══════════════════════════════════════════════════════
+async function openConv(phone){
+  currentPhone=phone; currentLead=conversations.find(c=>c.phone===phone);
+  saleBarOpen=false; editingName=false;
+  document.getElementById('crm-layout').classList.add('chat-open');
   renderConvList();
   await renderChatArea();
 }
 
-async function renderChatArea() {
-  const chatArea = document.getElementById('chat-area');
-  const sk = currentLead?.status || 'novo';
+async function renderChatArea(){
+  const ca=document.getElementById('chat-area');
+  const sk=currentLead?.status||'novo';
+  const purchaseInfo=getPurchaseInfo();
 
-  chatArea.innerHTML = `
-    <div class="chat-header">
-      <div class="chat-header-left">
+  ca.innerHTML=`
+    <div class="chat-hdr">
+      <div class="chat-hdr-row1">
         <button class="back-btn" onclick="closeChat()">←</button>
-        <div class="avatar">${initials(currentLead?.nome, currentPhone)}</div>
-        <div>
-          <div class="chat-header-name">${escHtml(currentLead?.nome || currentPhone)}</div>
-          <div class="chat-header-phone">${currentPhone}</div>
+        <div class="avatar">${esc(initials(currentLead?.nome,currentPhone))}</div>
+        <div class="name-edit-wrap" id="name-wrap">
+          <span class="name-display" id="name-display" onclick="startNameEdit()" title="Clique para editar">${esc(currentLead?.nome||'Sem nome')}</span>
+          <input class="name-input" id="name-input" style="display:none" value="${esc(currentLead?.nome||'')}" placeholder="Nome do cliente"/>
+        </div>
+        <div class="chat-hdr-right">
+          <select class="status-select" id="status-sel">
+            <option value="novo" ${sk==='novo'||sk==='lead'?'selected':''}>Novo</option>
+            <option value="em_atendimento" ${sk==='em_atendimento'?'selected':''}>Em atend.</option>
+            <option value="comprou" ${sk==='comprou'?'selected':''}>Comprou</option>
+            <option value="nao_comprou" ${sk==='nao_comprou'?'selected':''}>Não comprou</option>
+          </select>
+          <button class="btn-sale" onclick="toggleSaleBar()">💰 Venda</button>
         </div>
       </div>
-      <div class="chat-header-right">
-        <select class="status-select" id="status-select">
-          <option value="novo" ${sk==='novo'||sk==='lead'?'selected':''}>Novo</option>
-          <option value="em_atendimento" ${sk==='em_atendimento'?'selected':''}>Em atendimento</option>
-          <option value="comprou" ${sk==='comprou'?'selected':''}>Comprou</option>
-          <option value="nao_comprou" ${sk==='nao_comprou'?'selected':''}>Não comprou</option>
-        </select>
-        <button class="btn-sale" id="btn-sale" onclick="toggleSaleBar()">💰 Venda</button>
-      </div>
+      <div class="chat-hdr-sub">${currentPhone}${purchaseInfo}</div>
     </div>
-
-    <div id="sale-bar-slot"></div>
-
-    <div class="messages" id="messages">
-      <div class="empty-list">Carregando...</div>
-    </div>
-
+    <div id="sale-slot"></div>
+    <div class="messages" id="messages"><div class="empty-list">Carregando...</div></div>
     <div class="quick-menu hidden" id="quick-menu">
-      <div class="quick-menu-header">
-        <span>⚡ Respostas rápidas</span>
-        <a href="/crm/config" target="_blank">Editar</a>
-      </div>
+      <div class="qm-header"><span>⚡ Respostas rápidas</span><span onclick="switchView('config')">Editar</span></div>
       <div id="quick-items"></div>
     </div>
-
     <div class="composer">
-      <button class="btn-quick" id="btn-quick" title="Respostas rápidas">⚡</button>
-      <input type="text" id="msg-input" placeholder="Digite uma mensagem..." />
-      <button class="btn-send" id="send-btn">➤</button>
-    </div>
-  `;
+      <input type="file" class="file-input" id="img-input" accept="image/*" onchange="sendMedia(this,'image')"/>
+      <input type="file" class="file-input" id="aud-input" accept="audio/*" onchange="sendMedia(this,'audio')"/>
+      <button class="btn-icon" onclick="document.getElementById('img-input').click()" title="Enviar imagem">📎</button>
+      <button class="btn-icon" onclick="document.getElementById('aud-input').click()" title="Enviar áudio">🎵</button>
+      <button class="btn-icon" id="btn-quick" onclick="toggleQuickMenu()" title="Respostas rápidas">⚡</button>
+      <input class="composer-input" id="msg-input" placeholder="Digite uma mensagem..."/>
+      <button class="btn-send" id="btn-send">➤</button>
+    </div>`;
 
-  document.getElementById('status-select').onchange = async (e) => {
-    await updateStatus(currentLead.id, e.target.value);
-  };
-  document.getElementById('send-btn').onclick = sendMessage;
-  document.getElementById('msg-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) sendMessage();
-  });
-  document.getElementById('btn-quick').onclick = toggleQuickMenu;
+  document.getElementById('status-sel').onchange=e=>updateStatus(currentLead.id,e.target.value);
+  document.getElementById('btn-send').onclick=sendMsg;
+  document.getElementById('msg-input').onkeydown=e=>{ if(e.key==='Enter'&&!e.shiftKey)sendMsg(); };
+  document.getElementById('name-input').onblur=saveNameEdit;
+  document.getElementById('name-input').onkeydown=e=>{ if(e.key==='Enter')saveNameEdit(); if(e.key==='Escape')cancelNameEdit(); };
 
   renderQuickItems();
   await loadMessages(true);
 }
 
-// ── Mensagens ─────────────────────────────────────────────────────────────────
-
-let _msgPoll = null;
-
-async function loadMessages(scrollForce = false) {
-  if (!currentPhone) return;
-  const res = await fetch(`/api/messages/${currentPhone}`);
-  const msgs = await res.json();
-  const container = document.getElementById('messages');
-  if (!container) return;
-
-  if (!msgs.length) {
-    container.innerHTML = '<div class="empty-list">Nenhuma mensagem ainda</div>';
-    return;
+function getPurchaseInfo(){
+  if(!currentLead)return '';
+  if(currentLead.status==='comprou'&&currentLead.valor){
+    const val=parseFloat(currentLead.valor).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+    return ` · <span style="color:#4ade80">1 compra — ${val}</span>`;
   }
-
-  const wasBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 80;
-
-  container.innerHTML = msgs.map(m => {
-    const time = new Date(m.timestamp).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-    return `<div class="bubble ${m.direction}">${escHtml(m.body||'')}<span class="time">${time}</span></div>`;
-  }).join('');
-
-  if (scrollForce || wasBottom) container.scrollTop = container.scrollHeight;
+  return '';
 }
 
-// ── Sale bar ─────────────────────────────────────────────────────────────────
-
-function toggleSaleBar() {
-  saleBarOpen = !saleBarOpen;
-  const slot = document.getElementById('sale-bar-slot');
-  if (!slot) return;
-
-  if (saleBarOpen) {
-    slot.innerHTML = `
-      <div class="sale-bar" id="sale-bar">
-        <label>💰 Valor da venda:</label>
-        <input type="number" id="sale-value" placeholder="Ex: 297.00" step="0.01" min="0" />
-        <button class="btn-sale-confirm" id="btn-sale-confirm" onclick="confirmSale()">Confirmar</button>
-        <button class="btn-sale-cancel" onclick="toggleSaleBar()">✕</button>
-      </div>`;
-    setTimeout(() => document.getElementById('sale-value')?.focus(), 50);
-    document.getElementById('sale-value')?.addEventListener('keydown', e => {
-      if (e.key === 'Enter') confirmSale();
-    });
-  } else {
-    slot.innerHTML = '';
-  }
+// Nome editável
+function startNameEdit(){
+  if(editingName)return;
+  editingName=true;
+  document.getElementById('name-display').style.display='none';
+  const inp=document.getElementById('name-input');
+  inp.style.display='inline-block'; inp.focus(); inp.select();
 }
-
-async function confirmSale() {
-  const val = parseFloat(document.getElementById('sale-value')?.value);
-  if (!val || val <= 0) { alert('Informe um valor válido'); return; }
-
-  const btn = document.getElementById('btn-sale-confirm');
-  btn.disabled = true; btn.textContent = 'Enviando...';
-
-  const res = await fetch(`/api/leads/${currentLead.id}/venda`, {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ valor: val }),
-  });
-  const data = await res.json();
-  btn.disabled = false; btn.textContent = 'Confirmar';
-
-  if (data.ok) {
-    showToast('✅ Venda registrada' + (data.metaResult?.events_received ? ' + enviado ao Meta!' : ''));
-    saleBarOpen = false;
-    document.getElementById('sale-bar-slot').innerHTML = '';
-    await loadConversations(false);
-    currentLead = conversations.find(c => c.phone === currentPhone);
-    // atualiza o status-select visualmente
-    const sel = document.getElementById('status-select');
-    if (sel) sel.value = 'comprou';
-  } else {
-    alert('Erro: ' + (data.error || 'desconhecido'));
-  }
-}
-
-// ── Quick replies ─────────────────────────────────────────────────────────────
-
-async function loadQuickReplies() {
-  const res = await fetch('/api/quick-replies');
-  quickReplies = await res.json();
-}
-
-function renderQuickItems() {
-  const container = document.getElementById('quick-items');
-  if (!container) return;
-  if (!quickReplies.length) {
-    container.innerHTML = '<div class="empty-list" style="padding:1rem">Nenhuma resposta rápida.<br><a href="/crm/config" style="color:#00a884">Adicionar</a></div>';
-    return;
-  }
-  container.innerHTML = quickReplies.map(qr =>
-    `<div class="quick-item" onclick="useQuickReply(${JSON.stringify(escHtml(qr.body))})">${escHtml(qr.body)}</div>`
-  ).join('');
-}
-
-function toggleQuickMenu() {
-  const menu = document.getElementById('quick-menu');
-  if (!menu) return;
-  menu.classList.toggle('hidden');
-}
-
-function useQuickReply(body) {
-  // body já escapado — precisamos do texto puro
-  const div = document.createElement('div');
-  div.innerHTML = body;
-  const plain = div.textContent;
-  const input = document.getElementById('msg-input');
-  if (input) input.value = plain;
-  document.getElementById('quick-menu')?.classList.add('hidden');
-  input?.focus();
-}
-
-// ── Status ───────────────────────────────────────────────────────────────────
-
-async function updateStatus(leadId, status) {
-  await fetch(`/api/leads/${leadId}/status`, {
-    method: 'PATCH',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ status }),
-  });
+async function saveNameEdit(){
+  if(!editingName)return;
+  editingName=false;
+  const nome=document.getElementById('name-input').value.trim();
+  document.getElementById('name-display').textContent=nome||'Sem nome';
+  document.getElementById('name-display').style.display='';
+  document.getElementById('name-input').style.display='none';
+  await fetch(`/api/leads/${currentLead.id}/nome`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome})});
   await loadConversations(false);
-  currentLead = conversations.find(c => c.phone === currentPhone);
+  currentLead=conversations.find(c=>c.phone===currentPhone);
+}
+function cancelNameEdit(){
+  editingName=false;
+  document.getElementById('name-display').style.display='';
+  document.getElementById('name-input').style.display='none';
 }
 
-// ── Send ─────────────────────────────────────────────────────────────────────
+// Mensagens
+async function loadMessages(scrollForce=false){
+  if(!currentPhone)return;
+  const res=await fetch(`/api/messages/${currentPhone}`);
+  const msgs=await res.json();
+  const c=document.getElementById('messages');
+  if(!c)return;
+  if(!msgs.length){c.innerHTML='<div class="empty-list">Nenhuma mensagem ainda</div>';return;}
+  const atBottom=c.scrollHeight-c.scrollTop-c.clientHeight<80;
+  c.innerHTML=msgs.map(m=>{
+    const time=new Date(m.timestamp).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    const icon=m.type==='image'?'🖼️':m.type==='audio'?'🎵':m.type==='document'?'📄':'';
+    const body=icon?`<span class="media-icon">${icon}</span>${esc(m.body||'')}`:`${esc(m.body||'')}`;
+    const extra=m.type!=='text'?' media-bubble':'';
+    return `<div class="bubble ${m.direction}${extra}">${body}<span class="time">${time}</span></div>`;
+  }).join('');
+  if(scrollForce||atBottom)c.scrollTop=c.scrollHeight;
+}
 
-async function sendMessage() {
-  const input = document.getElementById('msg-input');
-  const body  = input?.value.trim();
-  if (!body || !currentPhone) return;
-
-  const btn = document.getElementById('send-btn');
-  btn.disabled = true; input.value = '';
+// Envio de texto
+async function sendMsg(){
+  const inp=document.getElementById('msg-input');
+  const body=inp?.value.trim();
+  if(!body||!currentPhone)return;
+  const btn=document.getElementById('btn-send');
+  btn.disabled=true; inp.value='';
   document.getElementById('quick-menu')?.classList.add('hidden');
-
-  try {
-    const res = await fetch(`/api/messages/${currentPhone}/send`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ body }),
-    });
-    const data = await res.json();
-    if (!data.ok) { alert('Erro: ' + (data.error || 'desconhecido')); input.value = body; }
-    else { await loadMessages(true); await loadConversations(false); }
-  } catch { alert('Erro de conexão'); input.value = body; }
-  finally { btn.disabled = false; input.focus(); }
+  try{
+    const r=await fetch(`/api/messages/${currentPhone}/send`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({body})});
+    const d=await r.json();
+    if(!d.ok){toast('Erro: '+(d.error||'?'),'#f87171');inp.value=body;}
+    else{await loadMessages(true);await loadConversations(false);}
+  }catch{toast('Erro de conexão','#f87171');inp.value=body;}
+  finally{btn.disabled=false;inp?.focus();}
 }
 
-// ── Mobile back ───────────────────────────────────────────────────────────────
-
-function closeChat() {
-  document.getElementById('app').classList.remove('chat-open');
-  if (_msgPoll) { clearInterval(_msgPoll); _msgPoll = null; }
-  currentPhone = null; currentLead = null;
+// Envio de mídia
+async function sendMedia(input,_type){
+  const file=input.files[0];
+  if(!file)return;
+  const label=_type==='image'?'imagem':'áudio';
+  toast(`Enviando ${label}...`,'#fbbf24');
+  const fd=new FormData();
+  fd.append('file',file);
+  try{
+    const r=await fetch(`/api/messages/${currentPhone}/media`,{method:'POST',body:fd});
+    const d=await r.json();
+    if(d.ok){toast(`✅ ${_type==='image'?'Imagem':'Áudio'} enviado!`);await loadMessages(true);await loadConversations(false);}
+    else toast('Erro: '+(d.error||'?'),'#f87171');
+  }catch{toast('Erro de conexão','#f87171');}
+  input.value='';
 }
 
-// ── Beep simples ──────────────────────────────────────────────────────────────
-
-let _ctx = null;
-function playBeep() {
-  try {
-    if (!_ctx) _ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = _ctx.createOscillator();
-    const gain = _ctx.createGain();
-    osc.connect(gain); gain.connect(_ctx.destination);
-    osc.frequency.value = 880; osc.type = 'sine';
-    gain.gain.setValueAtTime(0.12, _ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, _ctx.currentTime + 0.25);
-    osc.start(); osc.stop(_ctx.currentTime + 0.25);
-  } catch {}
+// Quick replies
+function toggleQuickMenu(){
+  document.getElementById('quick-menu')?.classList.toggle('hidden');
+}
+function renderQuickItems(){
+  const c=document.getElementById('quick-items');
+  if(!c)return;
+  if(!quickReplies.length){c.innerHTML='<div class="empty-list" style="padding:.8rem">Nenhuma resposta. <span style="color:#00a884;cursor:pointer" onclick="switchView(\'config\')">Adicionar</span></div>';return;}
+  c.innerHTML=quickReplies.map(qr=>`<div class="quick-item" onclick="useQuick(${JSON.stringify(qr.body)})">${esc(qr.body)}</div>`).join('');
+}
+function useQuick(body){
+  const inp=document.getElementById('msg-input');
+  if(inp)inp.value=body;
+  document.getElementById('quick-menu')?.classList.add('hidden');
+  inp?.focus();
+}
+async function loadQuickReplies(){
+  const r=await fetch('/api/quick-replies');
+  quickReplies=await r.json();
 }
 
-// ── Filtros de status ────────────────────────────────────────────────────────
+// Sale bar
+function toggleSaleBar(){
+  saleBarOpen=!saleBarOpen;
+  const slot=document.getElementById('sale-slot');
+  if(!slot)return;
+  if(saleBarOpen){
+    slot.innerHTML=`<div class="sale-bar">
+      <label>💰 Valor:</label>
+      <input class="sale-input" type="number" id="sale-val" placeholder="Ex: 297.00" step="0.01" min="0"/>
+      <button class="btn-sale-confirm" id="sale-ok" onclick="confirmSale()">Confirmar</button>
+      <button class="btn-sale-cancel" onclick="toggleSaleBar()">✕</button>
+    </div>`;
+    setTimeout(()=>document.getElementById('sale-val')?.focus(),40);
+    document.getElementById('sale-val').onkeydown=e=>{if(e.key==='Enter')confirmSale();};
+  } else slot.innerHTML='';
+}
+async function confirmSale(){
+  const val=parseFloat(document.getElementById('sale-val')?.value);
+  if(!val||val<=0){alert('Informe um valor válido');return;}
+  const btn=document.getElementById('sale-ok');
+  btn.disabled=true; btn.textContent='Enviando...';
+  const r=await fetch(`/api/leads/${currentLead.id}/venda`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({valor:val})});
+  const d=await r.json();
+  btn.disabled=false; btn.textContent='Confirmar';
+  if(d.ok){
+    toast('✅ Venda registrada'+(d.metaResult?.events_received?' + Meta!':''));
+    saleBarOpen=false;
+    document.getElementById('sale-slot').innerHTML='';
+    await loadConversations(false);
+    currentLead=conversations.find(c=>c.phone===currentPhone);
+    const sel=document.getElementById('status-sel');
+    if(sel)sel.value='comprou';
+    // atualiza info de compras no sub-header
+    const sub=document.querySelector('.chat-hdr-sub');
+    if(sub)sub.innerHTML=currentPhone+getPurchaseInfo();
+  } else { alert('Erro: '+(d.error||'?')); }
+}
 
-document.querySelectorAll('.sf-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.sf-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentFilter = btn.dataset.filter;
-    renderConvList();
-  });
-});
+// Status
+async function updateStatus(leadId,status){
+  await fetch(`/api/leads/${leadId}/status`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
+  await loadConversations(false);
+  currentLead=conversations.find(c=>c.phone===currentPhone);
+}
 
-document.getElementById('search').addEventListener('input', () => {
-  updateCounts(); renderConvList();
-});
+// Mobile back
+function closeChat(){
+  document.getElementById('crm-layout').classList.remove('chat-open');
+  currentPhone=null; currentLead=null;
+}
 
-// ── Fecha quick menu ao clicar fora ──────────────────────────────────────────
-document.addEventListener('click', e => {
-  const menu = document.getElementById('quick-menu');
-  const btn  = document.getElementById('btn-quick');
-  if (menu && !menu.classList.contains('hidden') && !menu.contains(e.target) && e.target !== btn)
+// Filtros sidebar
+document.querySelectorAll('.sf-btn').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.sf-btn').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); currentFilter=b.dataset.filter; renderConvList();
+}));
+document.getElementById('search').addEventListener('input',()=>{ updateCounts(); renderConvList(); });
+document.addEventListener('click',e=>{
+  const menu=document.getElementById('quick-menu');
+  const btn=document.getElementById('btn-quick');
+  if(menu&&!menu.classList.contains('hidden')&&!menu.contains(e.target)&&e.target!==btn)
     menu.classList.add('hidden');
 });
 
-// ── Polling ───────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════════════
+async function loadDashboard(){
+  const r=await fetch('/api/leads');
+  dashLeads=await r.json();
+  renderDash();
+}
+function renderDash(){
+  const vendas=dashLeads.filter(l=>l.status==='comprou');
+  const receita=vendas.reduce((s,l)=>s+(parseFloat(l.valor)||0),0);
+  const taxa=dashLeads.length?((vendas.length/dashLeads.length)*100).toFixed(1):0;
+  document.getElementById('d-total').textContent=dashLeads.length;
+  document.getElementById('d-vendas').textContent=vendas.length;
+  document.getElementById('d-receita').textContent='R$ '+receita.toLocaleString('pt-BR',{minimumFractionDigits:2});
+  document.getElementById('d-conv').textContent=taxa+'%';
 
-async function tick() {
-  await loadConversations(false);
-  if (currentPhone) await loadMessages(false);
+  const f=dashFilter==='todos'?dashLeads:dashLeads.filter(l=>dashFilter.split(',').includes(l.status));
+  const tbody=document.getElementById('dash-tbody');
+  if(!f.length){tbody.innerHTML='<tr><td colspan="7" class="empty-list">Nenhum resultado</td></tr>';return;}
+  tbody.innerHTML=f.map(l=>{
+    const date=new Date(l.created_at).toLocaleString('pt-BR');
+    const valor=l.valor?'R$ '+parseFloat(l.valor).toLocaleString('pt-BR',{minimumFractionDigits:2}):'—';
+    const sk=l.status||'lead';
+    const clid=l.ctwa_clid?`<span class="clid-chip" title="${esc(l.ctwa_clid)}">${esc(l.ctwa_clid)}</span>`:'—';
+    const acao=l.status==='comprou'
+      ?(l.purchase_sent_at?'<span class="sent-lbl">✓ Enviado Meta</span>':'<span class="sent-lbl">✓ Vendido</span>')
+      :`<button class="btn-venda-dash" onclick="openDashModal('${l.id}')">Registrar Venda</button>`;
+    return `<tr><td>${esc(l.phone)}</td><td>${esc(l.nome||'—')}</td><td><span class="badge ${sk}">${esc(sk)}</span></td><td>${clid}</td><td>${valor}</td><td>${date}</td><td>${acao}</td></tr>`;
+  }).join('');
 }
 
-// Init
-(async () => {
+document.querySelectorAll('.df-btn').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.df-btn').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); dashFilter=b.dataset.dfilter; renderDash();
+}));
+
+let pendingDashId=null;
+function openDashModal(id){ pendingDashId=id; document.getElementById('dash-modal').classList.add('open'); setTimeout(()=>document.getElementById('dm-valor').focus(),80); }
+function closeDashModal(){ document.getElementById('dash-modal').classList.remove('open'); pendingDashId=null; document.getElementById('dm-nome').value=''; document.getElementById('dm-valor').value=''; }
+async function confirmDashSale(){
+  const valor=parseFloat(document.getElementById('dm-valor').value);
+  const nome=document.getElementById('dm-nome').value;
+  if(!valor||valor<=0){alert('Valor inválido');return;}
+  const btn=document.getElementById('dm-confirm'); btn.disabled=true; btn.textContent='Enviando...';
+  const r=await fetch(`/api/leads/${pendingDashId}/venda`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({valor,nome})});
+  const d=await r.json();
+  btn.disabled=false; btn.textContent='Confirmar';
+  if(d.ok){ toast('✅ Venda registrada'+(d.metaResult?.events_received?' + Meta!':'')); closeDashModal(); await loadDashboard(); }
+  else alert('Erro: '+(d.error||'?'));
+}
+document.getElementById('dash-modal').addEventListener('click',e=>{ if(e.target===e.currentTarget)closeDashModal(); });
+
+// ══════════════════════════════════════════════════════
+// CONFIG (Respostas rápidas)
+// ══════════════════════════════════════════════════════
+async function cfgLoad(){
+  const r=await fetch('/api/quick-replies');
+  quickReplies=await r.json();
+  cfgRender();
+}
+function cfgRender(){
+  const list=document.getElementById('replies-list');
+  if(!list)return;
+  if(!quickReplies.length){list.innerHTML='<div class="empty-list">Nenhuma resposta cadastrada.</div>';return;}
+  list.innerHTML=quickReplies.map(r=>`
+    <div class="reply-card" id="rc-${r.id}">
+      <div class="reply-body-txt" id="rbt-${r.id}">${esc(r.body)}</div>
+      <textarea class="reply-ta" id="rta-${r.id}" style="display:none">${esc(r.body)}</textarea>
+      <div class="reply-acts">
+        <button class="btn-del-r" onclick="cfgDel('${r.id}')">🗑 Apagar</button>
+        <button class="btn-edit-r" id="re-${r.id}" onclick="cfgEdit('${r.id}')">✏️ Editar</button>
+        <button class="btn-save-r" id="rs-${r.id}" style="display:none" onclick="cfgSave('${r.id}')">✔ Salvar</button>
+        <button class="btn-cancel-r" id="rc2-${r.id}" style="display:none" onclick="cfgCancelEdit('${r.id}')">✕</button>
+      </div>
+    </div>`).join('');
+}
+function cfgEdit(id){
+  const r=quickReplies.find(x=>x.id===id);
+  document.getElementById(`rta-${id}`).value=r.body;
+  document.getElementById(`rbt-${id}`).style.display='none';
+  document.getElementById(`rta-${id}`).style.display='';
+  document.getElementById(`re-${id}`).style.display='none';
+  document.getElementById(`rs-${id}`).style.display='';
+  document.getElementById(`rc2-${id}`).style.display='';
+  document.getElementById(`rc-${id}`).classList.add('editing');
+  document.getElementById(`rta-${id}`).focus();
+}
+function cfgCancelEdit(id){
+  document.getElementById(`rbt-${id}`).style.display='';
+  document.getElementById(`rta-${id}`).style.display='none';
+  document.getElementById(`re-${id}`).style.display='';
+  document.getElementById(`rs-${id}`).style.display='none';
+  document.getElementById(`rc2-${id}`).style.display='none';
+  document.getElementById(`rc-${id}`).classList.remove('editing');
+}
+async function cfgSave(id){
+  const body=document.getElementById(`rta-${id}`).value.trim();
+  if(!body){alert('Texto vazio');return;}
+  const r=await fetch(`/api/quick-replies/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({body})});
+  if((await r.json()).ok){toast('Salvo!');await cfgLoad();renderQuickItems();}
+}
+async function cfgDel(id){
+  if(!confirm('Apagar esta resposta?'))return;
+  const r=await fetch(`/api/quick-replies/${id}`,{method:'DELETE'});
+  if((await r.json()).ok){toast('Apagado');await cfgLoad();renderQuickItems();}
+}
+async function cfgAdd(){
+  const body=document.getElementById('cfg-new-body').value.trim();
+  if(!body){alert('Digite o texto');return;}
+  const btn=document.getElementById('cfg-add-btn'); btn.disabled=true;
+  const r=await fetch('/api/quick-replies',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({body})});
+  const d=await r.json(); btn.disabled=false;
+  if(d.id){document.getElementById('cfg-new-body').value='';toast('Adicionado!');await cfgLoad();renderQuickItems();}
+}
+document.getElementById('cfg-new-body').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.ctrlKey)cfgAdd();});
+
+// ══════════════════════════════════════════════════════
+// POLLING 3s
+// ══════════════════════════════════════════════════════
+async function tick(){
+  await loadConversations(false);
+  if(currentPhone) await loadMessages(false);
+}
+
+(async()=>{
   await loadQuickReplies();
-  await loadConversations(true);   // primeira carga: silent (sem notificar)
-  setInterval(tick, 3000);          // polling a cada 3s
+  await loadConversations(true);
+  setInterval(tick,3000);
 })();
 </script>
 </body>
