@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>CRM — Márcia Taróloga</title>
+<title>ZAP FIRE</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
 <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js"></script>
 <style>
 :root{
@@ -361,11 +362,17 @@ tbody td{padding:.65rem .82rem;vertical-align:middle}
     <label>Valor (R$)</label>
     <input type="number" id="sm-valor" placeholder="Ex: 297,00" step="0.01" min="0"/>
     <label>Tipo de leitura (opcional)</label>
-    <select id="sm-tipo">
+    <select id="sm-tipo" onchange="tipoAutoFill('sm')">
       <option value="">— Selecione —</option>
-      <option>Tiragem Simples</option><option>Tiragem do Amor</option>
-      <option>Tiragem Completa</option><option>Mapa Astral</option>
-      <option>Baralho Cigano</option><option>Mandala</option><option>Outro</option>
+      <option value="1 Pergunta|35">1 Pergunta — R$35,00</option>
+      <option value="2 Perguntas|45">2 Perguntas — R$45,00</option>
+      <option value="3 Perguntas|50">3 Perguntas — R$50,00</option>
+      <option value="5 Perguntas|65">5 Perguntas — R$65,00</option>
+      <option value="Mesa Completa Amor|140">Mesa Completa Amor — R$140,00</option>
+      <option value="Previsão Anual|100">Previsão Anual — R$100,00</option>
+      <option value="Mapa Astral|200">Mapa Astral — R$200,00</option>
+      <option value="Consulta Completa (Perguntas Ilimitadas)|400">Consulta Completa (Perguntas Ilimitadas) — R$400,00</option>
+      <option value="Outro|">Outro</option>
     </select>
     <div class="sale-modal-acts">
       <button class="btn-cancel-s" onclick="closeSaleModal()">Cancelar</button>
@@ -383,11 +390,17 @@ tbody td{padding:.65rem .82rem;vertical-align:middle}
     <label>Valor (R$)</label>
     <input type="number" id="ds-valor" placeholder="Ex: 297,00" step="0.01" min="0"/>
     <label>Tipo de leitura (opcional)</label>
-    <select id="ds-tipo">
+    <select id="ds-tipo" onchange="tipoAutoFill('ds')">
       <option value="">— Selecione —</option>
-      <option>Tiragem Simples</option><option>Tiragem do Amor</option>
-      <option>Tiragem Completa</option><option>Mapa Astral</option>
-      <option>Baralho Cigano</option><option>Mandala</option><option>Outro</option>
+      <option value="1 Pergunta|35">1 Pergunta — R$35,00</option>
+      <option value="2 Perguntas|45">2 Perguntas — R$45,00</option>
+      <option value="3 Perguntas|50">3 Perguntas — R$50,00</option>
+      <option value="5 Perguntas|65">5 Perguntas — R$65,00</option>
+      <option value="Mesa Completa Amor|140">Mesa Completa Amor — R$140,00</option>
+      <option value="Previsão Anual|100">Previsão Anual — R$100,00</option>
+      <option value="Mapa Astral|200">Mapa Astral — R$200,00</option>
+      <option value="Consulta Completa (Perguntas Ilimitadas)|400">Consulta Completa (Perguntas Ilimitadas) — R$400,00</option>
+      <option value="Outro|">Outro</option>
     </select>
     <div class="dsale-acts">
       <button class="btn-cancel-s" onclick="closeDsModal()">Cancelar</button>
@@ -401,7 +414,7 @@ tbody td{padding:.65rem .82rem;vertical-align:middle}
 <div class="shell">
   <!-- Side nav -->
   <nav class="side-nav">
-    <div class="nav-logo">🔮</div>
+    <div class="nav-logo" style="color:var(--gold);font-size:1.5rem">⚡</div>
     <button class="nav-btn active" data-view="crm" onclick="switchView('crm')">
       💬<span class="nav-lbl">Chat</span>
     </button>
@@ -421,7 +434,7 @@ tbody td{padding:.65rem .82rem;vertical-align:middle}
     <div class="crm-layout" id="crm-layout">
       <div class="sidebar">
         <div class="sidebar-hdr">
-          <h2>Atendimento</h2>
+          <h2 style="color:var(--gold);letter-spacing:.12em">ZAP FIRE</h2>
           <div class="search-wrap">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
             <input class="search-in" id="search" placeholder="Buscar nome ou número..."/>
@@ -1009,7 +1022,7 @@ async function confirmSaleModal(){
   const val=parseFloat(document.getElementById('sm-valor').value);
   if(!val||val<=0){alert('Informe um valor válido');return;}
   const nome=document.getElementById('sm-nome').value;
-  const tipo=document.getElementById('sm-tipo').value;
+  const tipo=tipoLabel(document.getElementById('sm-tipo').value);
   const btn=document.getElementById('sm-confirm');btn.disabled=true;btn.textContent='Enviando...';
   const r=await fetch('/api/leads/'+salePendingLeadId+'/venda',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({valor:val,nome,tipo_leitura:tipo})});
   const d=await r.json();
@@ -1183,7 +1196,7 @@ async function confirmDsModal(){
   const val=parseFloat(document.getElementById('ds-valor').value);
   if(!val||val<=0){alert('Valor inválido');return;}
   const nome=document.getElementById('ds-nome').value;
-  const tipo=document.getElementById('ds-tipo').value;
+  const tipo=tipoLabel(document.getElementById('ds-tipo').value);
   const btn=document.getElementById('ds-confirm');btn.disabled=true;btn.textContent='Enviando...';
   const r=await fetch('/api/leads/'+dsPendingLeadId+'/venda',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({valor:val,nome,tipo_leitura:tipo})});
   const d=await r.json();btn.disabled=false;btn.textContent='Confirmar Venda';
@@ -1270,6 +1283,19 @@ async function cfgDelImg(id){
   if((await r.json()).ok){toast('Imagem removida');await cfgLoad();renderQItems();}
 }
 document.getElementById('cfg-ta').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.ctrlKey)cfgAdd();});
+
+// ═══════════════════════════════
+// TIPO DE LEITURA — auto-fill valor
+// ═══════════════════════════════
+function tipoLabel(val){return val?val.split('|')[0]:'';}
+function tipoAutoFill(prefix){
+  const sel=document.getElementById(prefix+'-tipo');
+  const valorIn=document.getElementById(prefix+'-valor');
+  if(!sel||!valorIn)return;
+  const parts=sel.value.split('|');
+  if(parts[1])valorIn.value=parts[1];
+  else if(sel.value==='Outro|')valorIn.value='';
+}
 
 // ═══════════════════════════════
 // CLICK OUTSIDE — close dropdowns
